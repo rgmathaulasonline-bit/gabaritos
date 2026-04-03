@@ -164,7 +164,6 @@
             width: 100%;
             height: auto;
             display: block;
-            /* SEM espelhamento - imagem natural */
             transform: scaleX(1);
         }
 
@@ -404,7 +403,7 @@
         let stopBtn = document.getElementById('stopCameraBtn');
         let detectionStatus = document.getElementById('detectionStatus');
         
-        let gabaritoOficial = [];      // array com respostas corretas
+        let gabaritoOficial = [];
         let alternativasLista = ['A','B','C','D','E'];
         let numQuestoes = 10;
         
@@ -429,20 +428,15 @@
         }
         
         // ==================== FUNÇÃO PRINCIPAL DE DETECÇÃO E PINTURA VERDE LIMÃO ====================
-        // Detecta bolinhas pintadas (azul ou preto) e compara com gabarito. 
-        // Pinta de VERDE LIMÃO as que estão corretas e de VERMELHO as incorretas (opcional)
         function processarFrameEExibirCorrecao(frameImageData, width, height) {
             if(!gabaritoOficial.length || gabaritoOficial.length !== numQuestoes) {
-                // Se não tem gabarito válido, limpa o canvas e não desenha nada
                 canvasCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
                 return null;
             }
             
-            // Criar grid com base no número de questões e alternativas
             const rows = numQuestoes;
             const cols = alternativasLista.length;
             
-            // Margens relativas para encontrar as bolinhas (baseado no layout do PDF gerado)
             const marginLeft = width * 0.12;
             const marginRight = width * 0.12;
             const marginTop = height * 0.18;
@@ -450,10 +444,8 @@
             const cellWidth = (width - marginLeft - marginRight) / cols;
             const cellHeight = (height - marginTop - marginBottom) / rows;
             
-            // Array para armazenar respostas detectadas
             let respostasDetectadas = new Array(rows).fill(null);
             
-            // Para cada questão, verificar qual alternativa está pintada (azul ou preto)
             for(let q = 0; q < rows; q++) {
                 let melhorAlternativa = null;
                 let maiorIntensidadeEscura = 0;
@@ -468,7 +460,6 @@
                     let totalPixelsEscuros = 0;
                     let amostras = 0;
                     
-                    // Amostrar pontos dentro do círculo
                     const step = Math.max(1, Math.floor(raio / 4));
                     for(let dx = -raio; dx <= raio; dx += step) {
                         for(let dy = -raio; dy <= raio; dy += step) {
@@ -479,7 +470,6 @@
                                 const r = frameImageData.data[idx];
                                 const g = frameImageData.data[idx+1];
                                 const b = frameImageData.data[idx+2];
-                                // Detectar AZUL (b > 90, r e g baixos) ou PRETO (todos < 70)
                                 const isBlue = (b > 90 && r < 100 && g < 100);
                                 const isBlack = (r < 70 && g < 70 && b < 70);
                                 if(isBlue || isBlack) {
@@ -500,7 +490,6 @@
                 respostasDetectadas[q] = melhorAlternativa;
             }
             
-            // Comparar com gabarito e montar resultado
             let acertos = 0;
             let detalhesCorrecao = [];
             for(let i = 0; i < rows; i++) {
@@ -516,17 +505,14 @@
                 });
             }
             
-            // ========== DESENHAR NO CANVAS: VERDE LIMÃO NAS CORRETAS ==========
             canvasCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
-            // Desenhar o frame do vídeo como fundo no canvas para manter a referência visual
             canvasCtx.drawImage(videoElement, 0, 0, detectionCanvas.width, detectionCanvas.height);
             
-            // Para cada questão, se detectou resposta e está correta: pinta de VERDE LIMÃO
             for(let q = 0; q < rows; q++) {
                 const alunoResp = respostasDetectadas[q];
                 const respCorreta = gabaritoOficial[q];
+                
                 if(alunoResp && respCorreta && alunoResp === respCorreta) {
-                    // Encontrar o índice da alternativa correta
                     const altIndex = alternativasLista.indexOf(respCorreta);
                     if(altIndex !== -1) {
                         const cellX = marginLeft + (altIndex * cellWidth);
@@ -535,23 +521,20 @@
                         const centerY = cellY + cellHeight/2;
                         const raio = Math.min(cellWidth, cellHeight) * 0.26;
                         
-                        // Desenhar círculo preenchido com VERDE LIMÃO (#adff2f)
                         canvasCtx.beginPath();
                         canvasCtx.arc(centerX, centerY, raio, 0, 2 * Math.PI);
-                        canvasCtx.fillStyle = '#adff2f';  // Verde limão
+                        canvasCtx.fillStyle = '#adff2f';
                         canvasCtx.fill();
                         canvasCtx.strokeStyle = '#228b22';
                         canvasCtx.lineWidth = 2.5;
                         canvasCtx.stroke();
                         
-                        // Escrever a letra da alternativa por cima
                         canvasCtx.font = `bold ${Math.max(14, raio * 0.8)}px "Segoe UI", Arial`;
                         canvasCtx.fillStyle = '#006400';
                         canvasCtx.shadowBlur = 0;
                         canvasCtx.fillText(respCorreta, centerX - 9, centerY + 7);
                     }
                 } else if(alunoResp && respCorreta && alunoResp !== respCorreta) {
-                    // Opcional: marcar vermelho para incorretas (dá feedback)
                     const altIndex = alternativasLista.indexOf(alunoResp);
                     if(altIndex !== -1) {
                         const cellX = marginLeft + (altIndex * cellWidth);
@@ -592,14 +575,12 @@
                 return;
             }
             
-            // Sincronizar tamanho do canvas com o vídeo
             if(detectionCanvas.width !== videoElement.videoWidth || detectionCanvas.height !== videoElement.videoHeight) {
                 detectionCanvas.width = videoElement.videoWidth;
                 detectionCanvas.height = videoElement.videoHeight;
                 canvasCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
             }
             
-            // Capturar frame do vídeo
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = videoElement.videoWidth;
             tempCanvas.height = videoElement.videoHeight;
@@ -607,7 +588,6 @@
             tempCtx.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
             const frameData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
             
-            // Processar e pintar verde limão
             const resultadoParcial = processarFrameEExibirCorrecao(frameData, tempCanvas.width, tempCanvas.height);
             if(resultadoParcial) {
                 window.resultadoParcial = resultadoParcial;
@@ -616,7 +596,7 @@
             animationId = requestAnimationFrame(startDetectionLoop);
         }
         
-        // ==================== CÂMERA (SEM ESPELHAMENTO) ====================
+        // ==================== CÂMERA ====================
         async function iniciarCamera() {
             try {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -629,7 +609,6 @@
                 };
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.srcObject = stream;
-                // Remover overlay
                 document.getElementById('videoOverlay').style.display = 'none';
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
@@ -669,7 +648,7 @@
         
         stopBtn.addEventListener('click', pararCamera);
         
-        // ==================== CAPTURAR E CORRIGIR FINAL (OCR + RELATÓRIO) ====================
+        // ==================== CAPTURAR E CORRIGIR FINAL ====================
         async function capturarECorrigirFinal() {
             if(!videoElement.videoWidth || !videoElement.videoHeight) {
                 alert('Inicie a câmera e posicione o gabarito primeiro!');
@@ -685,7 +664,6 @@
             document.getElementById('loading').style.display = 'block';
             document.getElementById('results').style.display = 'none';
             
-            // Capturar frame atual
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = videoElement.videoWidth;
             tempCanvas.height = videoElement.videoHeight;
@@ -694,15 +672,12 @@
             const imagemBlob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.92));
             
             try {
-                // Usar Tesseract para melhor precisão na leitura das letras
                 const { data: { text } } = await Tesseract.recognize(imagemBlob, 'por', { logger: m => console.log(m) });
                 
-                // Extrair respostas do texto OCR
                 const respostasOCR = extrairRespostasDoOCR(text, numQuestoes, alternativasLista);
                 const resultadoFinal = calcularResultadoFinal(respostasOCR, gabaritoOficial);
                 exibirResultados(resultadoFinal);
                 
-                // Mudar para aba de resultados
                 setTimeout(() => {
                     document.querySelectorAll('.tab-btn')[2].click();
                 }, 500);
@@ -766,7 +741,9 @@
             for(const d of resultado.detalhes) {
                 html += `<tr><td>${d.questao}</td><td><strong>${d.respostaAluno}</strong></td><td>${d.respostaCorreta}</td><td class="${d.acertou ? 'correct' : 'incorrect'}">${d.status}</td></tr>`;
             }
-            html += `</tbody></table></div>
+            html += `</tbody>
+                    </table>
+                </div>
                 <div class="export-buttons">
                     <button onclick="exportarExcel()">📊 Exportar Excel</button>
                     <button onclick="window.print()">🖨️ Imprimir</button>
