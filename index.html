@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistema de Gabarito - Correção com OpenCV (Perspectiva + Contornos)</title>
+    <title>Sistema de Gabarito - Correção Visual com OpenCV</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body {
@@ -73,7 +73,6 @@
         .export-buttons button { flex: 1; }
         @media (max-width: 480px) { .container { padding: 16px; } .camera-buttons { grid-template-columns: 1fr; } .questions-table { font-size: 0.7rem; } }
     </style>
-    <!-- OpenCV.js (necessário para detecção robusta como no artigo) -->
     <script async defer src="https://docs.opencv.org/4.10.0/opencv.js" onload="onOpenCvReady()"></script>
 </head>
 <body>
@@ -92,13 +91,13 @@
         <div class="form-card">
             <h3 style="margin-bottom: 16px;">⚙️ Configurações do Gabarito</h3>
             <div class="form-group"><label>📝 Número de Questões:</label><input type="number" id="numQuestoesPDF" value="10" min="1" max="50"></div>
-            <div class="form-group"><label>🔤 Alternativas:</label><input type="text" id="alternativasPDF" value="A,B,C,D,E" placeholder="Ex: A,B,C,D,E"></div>
+            <div class="form-group"><label>🔤 Alternativas (separadas por vírgula):</label><input type="text" id="alternativasPDF" value="A,B,C,D,E" placeholder="Ex: A,B,C,D,E"></div>
             <div class="form-group"><label>📚 Título da Prova:</label><input type="text" id="tituloProva" placeholder="Ex: Prova de Matemática"></div>
             <button onclick="gerarPDFGabarito()">📄 Gerar PDF para Alunos</button>
         </div>
         <div class="form-card" style="background: #fff3cd;">
-            <h3>ℹ️ Instruções (baseado no artigo científico)</h3>
-            <p style="font-size:0.9rem;">1. Configure e gere o PDF.<br>2. Imprima e os alunos PINTAM a bolinha (azul ou preto).<br>3. Na aba "Correção Visual", aponte a câmera → o sistema detecta automaticamente o cartão, corrige a perspectiva e pinta de VERDE LIMÃO as respostas corretas.</p>
+            <h3>ℹ️ Instruções</h3>
+            <p style="font-size:0.9rem;">1. Configure e gere o PDF (colunas agora mais compactas).<br>2. Imprima e os alunos PINTAM a bolinha (azul ou preto).<br>3. Na aba "Correção Visual", aponte a câmera → o sistema detecta o cartão, corrige a perspectiva e pinta de VERDE LIMÃO as respostas corretas.</p>
         </div>
     </div>
 
@@ -154,19 +153,19 @@
     let stopBtn = document.getElementById('stopCameraBtn');
     let detectionStatus = document.getElementById('detectionStatus');
     let cvReady = false;
-    let frameProcessing = false;  // evitar processamento concorrente
+    let frameProcessing = false;
     
     let gabaritoOficial = [];
     let alternativasLista = ['A','B','C','D','E'];
     let numQuestoes = 10;
     let resultadoAtual = null;
     
-    // Configurações de detecção (inspiradas no artigo)
-    const MIN_AREA_RATIO = 0.05;    // área mínima do cartão em relação à imagem
+    // Configurações de detecção
+    const MIN_AREA_RATIO = 0.05;
     const MAX_AREA_RATIO = 0.95;
-    const BUBBLE_AREA_MIN_RATIO = 0.008;  // proporção da área do cartão para cada bolha
+    const BUBBLE_AREA_MIN_RATIO = 0.008;
     const BUBBLE_AREA_MAX_RATIO = 0.035;
-    const FILL_THRESHOLD = 0.25;    // 25% da área da bolha preenchida = marcada
+    const FILL_THRESHOLD = 0.25;
     
     // ==================== OPENCV INICIALIZAÇÃO ====================
     function onOpenCvReady() {
@@ -193,30 +192,30 @@
         }
     }
     
-    // ==================== FUNÇÃO PRINCIPAL - DETECÇÃO COM OPENCV (como no artigo) ====================
+    // ==================== FUNÇÃO PRINCIPAL - DETECÇÃO COM OPENCV ====================
     async function processarFrameOpenCV(frameData, width, height) {
         if(!cvReady || !gabaritoOficial.length || gabaritoOficial.length !== numQuestoes) return null;
         if(frameProcessing) return null;
         frameProcessing = true;
         
+        let src = null, gray = null, blurred = null, edges = null, contours = null, hierarchy = null;
+        let warped = null, warpedGray = null, binary = null, bubbleContours = null, bubbleHierarchy = null;
+        let M = null, invM = null, srcPoints = null, dstPoints = null;
+        
         try {
-            // 1. Criar Mat a partir do frame (RGBA)
-            let src = cv.matFromImageData(frameData);
-            let gray = new cv.Mat();
+            src = cv.matFromImageData(frameData);
+            gray = new cv.Mat();
             cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
             
-            // 2. Blur + Canny para encontrar contornos
-            let blurred = new cv.Mat();
+            blurred = new cv.Mat();
             cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-            let edges = new cv.Mat();
+            edges = new cv.Mat();
             cv.Canny(blurred, edges, 75, 200);
             
-            // 3. Encontrar contornos externos
-            let contours = new cv.MatVector();
-            let hierarchy = new cv.Mat();
+            contours = new cv.MatVector();
+            hierarchy = new cv.Mat();
             cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
             
-            // 4. Procurar o maior contorno com 4 vértices (cartão-resposta)
             let maxArea = 0;
             let cardContourIdx = -1;
             let totalArea = src.rows * src.cols;
@@ -234,48 +233,41 @@
             }
             
             if(cardContourIdx === -1) {
-                // Não encontrou cartão
-                src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete();
                 frameProcessing = false;
                 return null;
             }
             
-            // 5. Obter os 4 pontos do contorno e ordenar (canto superior esquerdo, direito, inferior direito, inferior esquerdo)
             let cardContour = contours.get(cardContourIdx);
-            let points = new Array(4);
+            let points = [];
             for(let i = 0; i < 4; i++) {
-                points[i] = { x: cardContour.data32S[i*2], y: cardContour.data32S[i*2+1] };
+                points.push({ x: cardContour.data32S[i*2], y: cardContour.data32S[i*2+1] });
             }
-            // Ordenar pontos: (top-left, top-right, bottom-right, bottom-left)
             points.sort((a,b) => (a.x + a.y) - (b.x + b.y));
             let tl = points[0], br = points[3];
             let tr = points[1], bl = points[2];
             if((tl.x + tl.y) > (tr.x + tr.y)) { let tmp = tl; tl = tr; tr = tmp; }
             if((bl.x + bl.y) > (br.x + br.y)) { let tmp = bl; bl = br; br = tmp; }
-            let srcPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y]);
+            srcPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y]);
             
-            // Dimensões do cartão retificado (largura média entre topo e base)
             let widthTop = Math.hypot(tr.x - tl.x, tr.y - tl.y);
             let widthBottom = Math.hypot(br.x - bl.x, br.y - bl.y);
             let maxWidth = Math.max(widthTop, widthBottom);
             let heightLeft = Math.hypot(bl.x - tl.x, bl.y - tl.y);
             let heightRight = Math.hypot(br.x - tr.x, br.y - tr.y);
             let maxHeight = Math.max(heightLeft, heightRight);
-            let dstPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, maxWidth, 0, maxWidth, maxHeight, 0, maxHeight]);
+            dstPoints = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, maxWidth, 0, maxWidth, maxHeight, 0, maxHeight]);
             
-            let M = cv.getPerspectiveTransform(srcPoints, dstPoints);
-            let warped = new cv.Mat();
+            M = cv.getPerspectiveTransform(srcPoints, dstPoints);
+            warped = new cv.Mat();
             cv.warpPerspective(src, warped, M, new cv.Size(maxWidth, maxHeight));
             
-            // 6. Converter para escala de cinza e binarizar (INV + OTSU) como no artigo
-            let warpedGray = new cv.Mat();
+            warpedGray = new cv.Mat();
             cv.cvtColor(warped, warpedGray, cv.COLOR_RGBA2GRAY);
-            let binary = new cv.Mat();
+            binary = new cv.Mat();
             cv.threshold(warpedGray, binary, 0, 255, cv.THRESH_BINARY_INV | cv.THRESH_OTSU);
             
-            // 7. Encontrar contornos das bolhas (círculos) no warped
-            let bubbleContours = new cv.MatVector();
-            let bubbleHierarchy = new cv.Mat();
+            bubbleContours = new cv.MatVector();
+            bubbleHierarchy = new cv.Mat();
             cv.findContours(binary, bubbleContours, bubbleHierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
             
             let totalWarpArea = warped.rows * warped.cols;
@@ -288,45 +280,37 @@
                 if(area > minBubbleArea && area < maxBubbleArea) {
                     let rect = cv.boundingRect(cnt);
                     let aspect = rect.width / rect.height;
-                    if(aspect > 0.7 && aspect < 1.4) {  // aproximadamente circular
-                        candidates.push({ contour: cnt, rect: rect, area: area });
+                    if(aspect > 0.7 && aspect < 1.4) {
+                        candidates.push({ contour: cnt.clone(), rect: rect, area: area });
                     }
                 }
             }
             
             if(candidates.length !== numQuestoes * alternativasLista.length) {
-                // Não encontrou todas as bolhas
-                src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-                warped.delete(); warpedGray.delete(); binary.delete(); bubbleContours.delete(); bubbleHierarchy.delete();
-                for(let c of candidates) c.contour.delete();
                 frameProcessing = false;
                 return null;
             }
             
-            // 8. Ordenar as bolhas: por linha (Y) e depois por coluna (X)
             candidates.sort((a,b) => {
                 if(Math.abs(a.rect.y - b.rect.y) < a.rect.height * 0.5) return a.rect.x - b.rect.x;
                 else return a.rect.y - b.rect.y;
             });
             
-            // Agrupar por questão (a cada 'alternativasLista.length' bolhas)
-            let questoes = [];
             let bolhasPorQuestao = alternativasLista.length;
+            let questoes = [];
             for(let q = 0; q < numQuestoes; q++) {
                 let start = q * bolhasPorQuestao;
                 let bolhas = candidates.slice(start, start + bolhasPorQuestao);
-                bolhas.sort((a,b) => a.rect.x - b.rect.x); // ordenar por coluna dentro da questão
+                bolhas.sort((a,b) => a.rect.x - b.rect.x);
                 questoes.push(bolhas);
             }
             
-            // 9. Para cada questão, identificar qual bolha está preenchida (maior proporção de pixels brancos)
             let respostasDetectadas = [];
             for(let q = 0; q < questoes.length; q++) {
                 let melhorIdx = -1;
                 let maiorFill = 0;
                 for(let alt = 0; alt < bolhasPorQuestao; alt++) {
                     let bolha = questoes[q][alt];
-                    // Criar máscara para a bolha
                     let mask = new cv.Mat.zeros(binary.rows, binary.cols, cv.CV_8UC1);
                     let contourVec = new cv.MatVector();
                     contourVec.push_back(bolha.contour);
@@ -346,7 +330,6 @@
                 else respostasDetectadas.push(null);
             }
             
-            // 10. Comparar com gabarito e desenhar os círculos coloridos na imagem warped (e depois projetar na original)
             let acertos = 0;
             let detalhes = [];
             for(let i = 0; i < numQuestoes; i++) {
@@ -362,16 +345,9 @@
                 });
             }
             
-            // Desenhar no warped (para debug) e também projetar na imagem original via transformação inversa
-            // Vamos desenhar círculos na imagem warped (mas o usuário vê o canvas sobre o vídeo)
-            // Para simplificar, desenhamos diretamente no detectionCanvas sobre o frame original,
-            // usando as coordenadas originais dos contornos (já temos os pontos do cartão). 
-            // Como temos os pontos originais do cartão, podemos desenhar os círculos nas posições aproximadas.
-            // Método: para cada bolha, temos o retângulo no warped; podemos mapear de volta para a imagem original usando a matriz inversa.
-            let invM = new cv.Mat();
+            // Desenhar correções no canvas original
+            invM = new cv.Mat();
             cv.invert(M, invM);
-            
-            // Limpar canvas
             canvasCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
             canvasCtx.drawImage(videoElement, 0, 0, detectionCanvas.width, detectionCanvas.height);
             
@@ -382,7 +358,6 @@
                         x: bolhaWarped.rect.x + bolhaWarped.rect.width/2,
                         y: bolhaWarped.rect.y + bolhaWarped.rect.height/2
                     };
-                    // Mapear para coordenadas originais usando a matriz inversa
                     let srcPt = cv.matFromArray(1, 1, cv.CV_32FC2, [centerWarped.x, centerWarped.y]);
                     let dstPt = new cv.Mat();
                     cv.perspectiveTransform(srcPt, dstPt, invM);
@@ -399,12 +374,11 @@
                         canvasCtx.beginPath();
                         canvasCtx.arc(origX, origY, raio/2, 0, 2*Math.PI);
                         if(isCorrect) {
-                            canvasCtx.fillStyle = '#adff2f'; // verde limão
+                            canvasCtx.fillStyle = '#adff2f';
                             canvasCtx.fill();
                             canvasCtx.strokeStyle = '#228b22';
                             canvasCtx.lineWidth = 2;
                             canvasCtx.stroke();
-                            // Escrever a letra
                             canvasCtx.font = `bold ${Math.max(14, raio/2.5)}px "Segoe UI"`;
                             canvasCtx.fillStyle = '#006400';
                             canvasCtx.fillText(alunoResp, origX - 7, origY + 6);
@@ -425,18 +399,28 @@
             let percentual = ((acertos/numQuestoes)*100).toFixed(0);
             detectionStatus.innerHTML = `<span class="status-badge status-success">🟢 VERDE LIMÃO = ACERTO! ${acertos}/${numQuestoes} corretas (${percentual}%)</span>`;
             
-            // Liberar memória OpenCV
-            src.delete(); gray.delete(); blurred.delete(); edges.delete(); contours.delete(); hierarchy.delete();
-            warped.delete(); warpedGray.delete(); binary.delete(); bubbleContours.delete(); bubbleHierarchy.delete();
-            M.delete(); invM.delete(); srcPoints.delete(); dstPoints.delete();
-            for(let c of candidates) c.contour.delete();
-            
-            frameProcessing = false;
             return { total: numQuestoes, acertos, percentual, detalhes, respostasDetectadas };
         } catch(err) {
             console.error("Erro no processamento OpenCV:", err);
-            frameProcessing = false;
             return null;
+        } finally {
+            // Liberação segura de memória
+            if(src) src.delete();
+            if(gray) gray.delete();
+            if(blurred) blurred.delete();
+            if(edges) edges.delete();
+            if(contours) contours.delete();
+            if(hierarchy) hierarchy.delete();
+            if(warped) warped.delete();
+            if(warpedGray) warpedGray.delete();
+            if(binary) binary.delete();
+            if(bubbleContours) bubbleContours.delete();
+            if(bubbleHierarchy) bubbleHierarchy.delete();
+            if(M) M.delete();
+            if(invM) invM.delete();
+            if(srcPoints) srcPoints.delete();
+            if(dstPoints) dstPoints.delete();
+            frameProcessing = false;
         }
     }
     
@@ -496,13 +480,18 @@
     startBtn.addEventListener('click', () => { atualizarConfiguracoes(); iniciarCamera(); });
     stopBtn.addEventListener('click', pararCamera);
     
-    // ==================== CAPTURAR E CORRIGIR FINAL ====================
+    // ==================== CAPTURAR E CORRIGIR FINAL (CORRIGIDO) ====================
     async function capturarECorrigirFinal() {
+        if(!cvReady) { alert("OpenCV ainda não carregou. Aguarde um instante."); return; }
         if(!videoElement.videoWidth || !videoElement.videoHeight) { alert('Inicie a câmera e posicione o gabarito primeiro!'); return; }
         atualizarConfiguracoes();
         if(!gabaritoOficial.length || gabaritoOficial.length !== numQuestoes) { alert(`Gabarito inválido. Configure exatamente ${numQuestoes} respostas.`); return; }
+        
         document.getElementById('loading').style.display = 'block';
         document.getElementById('results').style.display = 'none';
+        
+        // Aguardar um pequeno delay para garantir que o frame esteja estável
+        await new Promise(r => setTimeout(r, 100));
         
         const tempCanvas = document.createElement('canvas');
         tempCanvas.width = videoElement.videoWidth;
@@ -511,12 +500,27 @@
         tempCtx.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
         const frameData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
         
-        const resultado = await processarFrameOpenCV(frameData, tempCanvas.width, tempCanvas.height);
+        // Executar processamento em um contexto isolado (sem interferência do loop)
+        let resultado = null;
+        try {
+            resultado = await processarFrameOpenCV(frameData, tempCanvas.width, tempCanvas.height);
+        } catch(e) {
+            console.error("Erro crítico na captura:", e);
+            alert("Erro ao processar a imagem. Verifique se o cartão está bem iluminado e visível.");
+            document.getElementById('loading').style.display = 'none';
+            return;
+        }
+        
         if(resultado && resultado.detalhes) {
             resultadoAtual = resultado;
             exibirResultados(resultadoAtual);
-            setTimeout(() => { document.querySelectorAll('.tab-btn')[2].click(); }, 500);
-        } else { alert("Não foi possível detectar o cartão ou as bolhas. Verifique iluminação, ângulo e se o cartão está visível."); }
+            setTimeout(() => { 
+                // Mudar para a aba de resultados
+                document.querySelectorAll('.tab-btn')[2].click();
+            }, 500);
+        } else {
+            alert("Não foi possível detectar o cartão ou as bolhas. Certifique-se de que o gabarito impresso está inteiro na imagem, com boa iluminação e sem reflexos.");
+        }
         document.getElementById('loading').style.display = 'none';
     }
     
@@ -543,7 +547,7 @@
         XLSX.writeFile(wb, `correcao_${new Date().toISOString().slice(0,19)}.xlsx`);
     }
     
-    // ==================== PDF GENERATOR ====================
+    // ==================== PDF GENERATOR COM COLUNAS MAIS PRÓXIMAS ====================
     async function gerarPDFGabarito() {
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
@@ -551,6 +555,15 @@
         const altStr = document.getElementById('alternativasPDF').value;
         const titulo = document.getElementById('tituloProva').value || 'Avaliação';
         const alternativas = altStr.split(',').map(a=>a.trim().toUpperCase());
+        
+        // Configuração de layout compacto
+        const startX = 25;
+        const colQuestaoW = 20;      // largura da coluna "Questão"
+        const colAltW = 28;          // largura de cada alternativa (mais compacta)
+        const totalCols = 1 + alternativas.length;
+        const tableWidth = colQuestaoW + (alternativas.length * colAltW);
+        const offsetX = startX;
+        
         doc.setFont('helvetica');
         doc.setFontSize(28); doc.setTextColor(102,126,234); doc.text('GABARITO',105,30,{align:'center'});
         doc.setFontSize(12); doc.setTextColor(0,0,0); doc.line(20,40,190,40);
@@ -561,26 +574,69 @@
         doc.text(`Título: ${titulo}`,20,100);
         doc.text(`Total: ${numQ} questões`,20,108);
         doc.line(20,116,190,116);
-        let y=130;
-        const colW = 170/(alternativas.length+1);
-        doc.setFillColor(102,126,234); doc.rect(20,y-5,170,10,'F');
-        doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.text('Questão',25,y);
-        let xInit = 25+colW;
-        for(let i=0;i<alternativas.length;i++){ doc.text(alternativas[i], xInit+(colW/2)-3, y); xInit+=colW; }
-        doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); y+=12;
-        for(let i=0;i<numQ;i++){
-            if(y>270){ doc.addPage(); y=20; doc.setFillColor(102,126,234); doc.rect(20,y-5,170,10,'F'); doc.setTextColor(255,255,255); doc.text('Questão',25,y); xInit=25+colW; for(let j=0;j<alternativas.length;j++){ doc.text(alternativas[j], xInit+(colW/2)-3,y); xInit+=colW; } doc.setTextColor(0,0,0); y+=12; }
-            if(i%2===0){ doc.setFillColor(245,245,245); doc.rect(20,y-4,170,12,'F'); }
-            doc.setFont('helvetica','bold'); doc.text(`${i+1}`,25,y+2); doc.setFont('helvetica','normal');
-            xInit = 25+colW;
-            for(let j=0;j<alternativas.length;j++){ const cx = xInit+(colW/2); doc.setDrawColor(0,0,0); doc.setFillColor(255,255,255); doc.circle(cx, y+1, 4, 'FD'); xInit+=colW; }
-            y+=14;
+        
+        let y = 130;
+        // Cabeçalho da tabela
+        doc.setFillColor(102,126,234);
+        doc.rect(offsetX, y-5, tableWidth, 10, 'F');
+        doc.setTextColor(255,255,255);
+        doc.setFont('helvetica','bold');
+        doc.text('Questão', offsetX + 2, y);
+        let xAtual = offsetX + colQuestaoW;
+        for(let i=0; i<alternativas.length; i++) {
+            doc.text(alternativas[i], xAtual + colAltW/2 - 3, y);
+            xAtual += colAltW;
         }
-        for(let i=1;i<=doc.internal.getNumberOfPages();i++){ doc.setPage(i); doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text('Instruções: PINTE a bolinha de AZUL ou PRETO',105,285,{align:'center'}); }
+        doc.setTextColor(0,0,0);
+        doc.setFont('helvetica','normal');
+        y += 12;
+        
+        for(let i=0; i<numQ; i++) {
+            if(y > 270) {
+                doc.addPage();
+                y = 20;
+                doc.setFillColor(102,126,234);
+                doc.rect(offsetX, y-5, tableWidth, 10, 'F');
+                doc.setTextColor(255,255,255);
+                doc.text('Questão', offsetX + 2, y);
+                xAtual = offsetX + colQuestaoW;
+                for(let j=0; j<alternativas.length; j++) {
+                    doc.text(alternativas[j], xAtual + colAltW/2 - 3, y);
+                    xAtual += colAltW;
+                }
+                doc.setTextColor(0,0,0);
+                y += 12;
+            }
+            if(i%2 === 0) {
+                doc.setFillColor(245,245,245);
+                doc.rect(offsetX, y-4, tableWidth, 12, 'F');
+            }
+            doc.setFont('helvetica','bold');
+            doc.text(`${i+1}`, offsetX + 2, y+2);
+            doc.setFont('helvetica','normal');
+            xAtual = offsetX + colQuestaoW;
+            for(let j=0; j<alternativas.length; j++) {
+                const cx = xAtual + colAltW/2;
+                doc.setDrawColor(0,0,0);
+                doc.setFillColor(255,255,255);
+                doc.circle(cx, y+1, 4, 'FD');
+                xAtual += colAltW;
+            }
+            y += 14;
+        }
+        
+        for(let i=1;i<=doc.internal.getNumberOfPages();i++){
+            doc.setPage(i);
+            doc.setFontSize(9);
+            doc.setTextColor(150,150,150);
+            doc.text('Instruções: PINTE a bolinha de AZUL ou PRETO',105,285,{align:'center'});
+        }
         doc.save(`gabarito_${titulo.replace(/\s/g,'_')}.pdf`);
+        
+        // Sincronizar com a aba de leitura
         document.getElementById('numQuestoesLeitura').value = numQ;
         document.getElementById('alternativasLeitura').value = altStr;
-        alert(`✅ PDF gerado! Ao usar a câmera, o sistema detectará o cartão automaticamente (perspectiva + contornos) e pintará de VERDE LIMÃO as corretas.`);
+        alert(`✅ PDF gerado com colunas mais compactas! Ao usar a câmera, o sistema detectará o cartão e pintará de VERDE LIMÃO as corretas.`);
     }
     
     function switchTab(tab) {
