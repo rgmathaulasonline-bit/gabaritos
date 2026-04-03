@@ -167,11 +167,117 @@
             width: 100%;
             height: auto;
             display: none;
-            transform: scaleX(-1);
         }
 
         .video-container.active #video {
             display: block;
+        }
+
+        /* Marcador verde limão para enquadramento */
+        .camera-guide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: none;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .video-container.active .camera-guide {
+            display: block;
+        }
+
+        /* Cantos do marcador - estilo verde limão */
+        .guide-corner {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border-color: #32CD32;
+            border-style: solid;
+            border-width: 0;
+        }
+
+        .corner-tl {
+            top: 15%;
+            left: 10%;
+            border-top-width: 4px;
+            border-left-width: 4px;
+        }
+
+        .corner-tr {
+            top: 15%;
+            right: 10%;
+            border-top-width: 4px;
+            border-right-width: 4px;
+        }
+
+        .corner-bl {
+            bottom: 15%;
+            left: 10%;
+            border-bottom-width: 4px;
+            border-left-width: 4px;
+        }
+
+        .corner-br {
+            bottom: 15%;
+            right: 10%;
+            border-bottom-width: 4px;
+            border-right-width: 4px;
+        }
+
+        /* Linhas do marcador */
+        .guide-line {
+            position: absolute;
+            background-color: #32CD32;
+            opacity: 0.6;
+        }
+
+        .line-top {
+            top: 15%;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+        }
+
+        .line-bottom {
+            bottom: 15%;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+        }
+
+        .line-left {
+            top: 15%;
+            left: 10%;
+            bottom: 15%;
+            width: 2px;
+        }
+
+        .line-right {
+            top: 15%;
+            right: 10%;
+            bottom: 15%;
+            width: 2px;
+        }
+
+        /* Texto de instrução do marcador */
+        .guide-text {
+            position: absolute;
+            bottom: 5%;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #32CD32;
+            background: rgba(0,0,0,0.7);
+            padding: 8px;
+            font-size: 12px;
+            border-radius: 20px;
+            width: 80%;
+            margin: 0 auto;
+            font-weight: bold;
+            pointer-events: none;
         }
 
         .video-overlay {
@@ -188,6 +294,7 @@
             font-size: 0.9rem;
             text-align: center;
             padding: 20px;
+            z-index: 5;
         }
 
         .video-container.active .video-overlay {
@@ -303,6 +410,50 @@
             .questions-table {
                 font-size: 0.7rem;
             }
+
+            .guide-corner {
+                width: 30px;
+                height: 30px;
+            }
+
+            .corner-tl, .corner-bl {
+                left: 5%;
+            }
+
+            .corner-tr, .corner-br {
+                right: 5%;
+            }
+
+            .line-top, .line-bottom {
+                left: 5%;
+                right: 5%;
+            }
+
+            .line-left, .line-right {
+                top: 15%;
+                bottom: 15%;
+            }
+
+            .corner-tl, .corner-tr {
+                top: 10%;
+            }
+
+            .corner-bl, .corner-br {
+                bottom: 10%;
+            }
+
+            .line-top {
+                top: 10%;
+            }
+
+            .line-bottom {
+                bottom: 10%;
+            }
+
+            .line-left, .line-right {
+                top: 10%;
+                bottom: 10%;
+            }
         }
 
         @media print {
@@ -366,9 +517,21 @@
 
                 <div class="video-container" id="videoContainer">
                     <video id="video" autoplay playsinline></video>
+                    <!-- Marcador verde limão para enquadramento -->
+                    <div class="camera-guide">
+                        <div class="guide-corner corner-tl"></div>
+                        <div class="guide-corner corner-tr"></div>
+                        <div class="guide-corner corner-bl"></div>
+                        <div class="guide-corner corner-br"></div>
+                        <div class="guide-line line-top"></div>
+                        <div class="guide-line line-bottom"></div>
+                        <div class="guide-line line-left"></div>
+                        <div class="guide-line line-right"></div>
+                        <div class="guide-text">📐 Enquadre o gabarito dentro do marcador verde</div>
+                    </div>
                     <div class="video-overlay">
                         📱 Toque em "Abrir Câmera" e depois em "Tirar Foto"<br>
-                        Posicione o gabarito preenchido dentro do quadro
+                        Posicione o gabarito preenchido dentro do quadro verde
                     </div>
                 </div>
 
@@ -627,10 +790,8 @@
             canvas.width = videoElement.videoWidth;
             canvas.height = videoElement.videoHeight;
             
-            context.save();
-            context.scale(-1, 1);
-            context.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
-            context.restore();
+            // SEM inversão de imagem - agora está normal
+            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
             
             canvas.toBlob((blob) => {
                 const url = URL.createObjectURL(blob);
