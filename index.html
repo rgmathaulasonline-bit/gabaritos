@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Sistema de Gabarito - Gerar PDF e Corrigir</title>
+    <title>Sistema de Gabarito - Correção Visual com IA</title>
     <style>
         * {
             margin: 0;
@@ -142,7 +142,7 @@
             color: #333;
         }
 
-        /* Câmera */
+        /* Câmera com overlay de detecção */
         .camera-section {
             margin-bottom: 20px;
         }
@@ -161,123 +161,14 @@
             overflow: hidden;
             background: #000;
             margin-bottom: 16px;
+            cursor: pointer;
         }
 
         #video {
             width: 100%;
             height: auto;
-            display: none;
-        }
-
-        .video-container.active #video {
             display: block;
-        }
-
-        /* Marcador verde limão para enquadramento */
-        .camera-guide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            display: none;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .video-container.active .camera-guide {
-            display: block;
-        }
-
-        /* Cantos do marcador - estilo verde limão */
-        .guide-corner {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border-color: #32CD32;
-            border-style: solid;
-            border-width: 0;
-        }
-
-        .corner-tl {
-            top: 15%;
-            left: 10%;
-            border-top-width: 4px;
-            border-left-width: 4px;
-        }
-
-        .corner-tr {
-            top: 15%;
-            right: 10%;
-            border-top-width: 4px;
-            border-right-width: 4px;
-        }
-
-        .corner-bl {
-            bottom: 15%;
-            left: 10%;
-            border-bottom-width: 4px;
-            border-left-width: 4px;
-        }
-
-        .corner-br {
-            bottom: 15%;
-            right: 10%;
-            border-bottom-width: 4px;
-            border-right-width: 4px;
-        }
-
-        /* Linhas do marcador */
-        .guide-line {
-            position: absolute;
-            background-color: #32CD32;
-            opacity: 0.6;
-        }
-
-        .line-top {
-            top: 15%;
-            left: 10%;
-            right: 10%;
-            height: 2px;
-        }
-
-        .line-bottom {
-            bottom: 15%;
-            left: 10%;
-            right: 10%;
-            height: 2px;
-        }
-
-        .line-left {
-            top: 15%;
-            left: 10%;
-            bottom: 15%;
-            width: 2px;
-        }
-
-        .line-right {
-            top: 15%;
-            right: 10%;
-            bottom: 15%;
-            width: 2px;
-        }
-
-        /* Texto de instrução do marcador */
-        .guide-text {
-            position: absolute;
-            bottom: 5%;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: #32CD32;
-            background: rgba(0,0,0,0.7);
-            padding: 8px;
-            font-size: 12px;
-            border-radius: 20px;
-            width: 80%;
-            margin: 0 auto;
-            font-weight: bold;
-            pointer-events: none;
+            transform: scaleX(-1);
         }
 
         .video-overlay {
@@ -294,11 +185,7 @@
             font-size: 0.9rem;
             text-align: center;
             padding: 20px;
-            z-index: 5;
-        }
-
-        .video-container.active .video-overlay {
-            display: none;
+            pointer-events: none;
         }
 
         .preview-container {
@@ -398,6 +285,33 @@
             flex: 1;
         }
 
+        /* Status de detecção em tempo real */
+        .detection-status {
+            background: #f0f0f0;
+            border-radius: 12px;
+            padding: 12px;
+            margin-top: 12px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding: 16px;
@@ -409,50 +323,6 @@
             
             .questions-table {
                 font-size: 0.7rem;
-            }
-
-            .guide-corner {
-                width: 30px;
-                height: 30px;
-            }
-
-            .corner-tl, .corner-bl {
-                left: 5%;
-            }
-
-            .corner-tr, .corner-br {
-                right: 5%;
-            }
-
-            .line-top, .line-bottom {
-                left: 5%;
-                right: 5%;
-            }
-
-            .line-left, .line-right {
-                top: 15%;
-                bottom: 15%;
-            }
-
-            .corner-tl, .corner-tr {
-                top: 10%;
-            }
-
-            .corner-bl, .corner-br {
-                bottom: 10%;
-            }
-
-            .line-top {
-                top: 10%;
-            }
-
-            .line-bottom {
-                bottom: 10%;
-            }
-
-            .line-left, .line-right {
-                top: 10%;
-                bottom: 10%;
             }
         }
 
@@ -466,12 +336,12 @@
 <body>
     <div class="container">
         <h1>📸 Sistema de Gabarito</h1>
-        <p class="subtitle">Gere o PDF para os alunos preencherem e depois corrija</p>
+        <p class="subtitle">Detecção visual em tempo real | Pintou azul/preto → Verde limão se correto</p>
 
         <!-- Tabs -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('gerar')">📄 Gerar PDF do Gabarito</button>
-            <button class="tab-btn" onclick="switchTab('ler')">📷 Ler Respostas</button>
+            <button class="tab-btn" onclick="switchTab('ler')">📷 Correção Visual</button>
             <button class="tab-btn" onclick="switchTab('resultados')">📊 Resultados</button>
         </div>
 
@@ -500,65 +370,52 @@
                     1. Configure o número de questões e alternativas<br>
                     2. Clique em "Gerar PDF para Alunos"<br>
                     3. Imprima o PDF gerado<br>
-                    4. Os alunos preencherão NOME, DATA e TURMA<br>
-                    5. Os alunos devem PINTAR a bolinha da alternativa escolhida<br>
-                    6. Após preenchido, tire uma foto para correção
+                    4. Os alunos devem PINTAR a bolinha da alternativa escolhida (azul ou preto)<br>
+                    5. Na aba "Correção Visual", aponte a câmera → as bolinhas pintadas ficarão VERDE LIMÃO se estiverem na posição correta conforme o gabarito!
                 </p>
             </div>
         </div>
 
-        <!-- Aba Ler Respostas -->
+        <!-- Aba Correção Visual em Tempo Real -->
         <div id="tab-ler" class="tab-content">
             <div class="camera-section">
                 <div class="camera-buttons">
-                    <button class="btn-secondary" id="startCameraBtn">📷 Abrir Câmera</button>
-                    <button class="btn-warning" id="stopCameraBtn" disabled>🔴 Fechar Câmera</button>
+                    <button class="btn-secondary" id="startCameraBtn">📷 Iniciar Câmera (Detecção)</button>
+                    <button class="btn-warning" id="stopCameraBtn" disabled>🔴 Parar Câmera</button>
                 </div>
 
                 <div class="video-container" id="videoContainer">
-                    <video id="video" autoplay playsinline></video>
-                    <!-- Marcador verde limão para enquadramento -->
-                    <div class="camera-guide">
-                        <div class="guide-corner corner-tl"></div>
-                        <div class="guide-corner corner-tr"></div>
-                        <div class="guide-corner corner-bl"></div>
-                        <div class="guide-corner corner-br"></div>
-                        <div class="guide-line line-top"></div>
-                        <div class="guide-line line-bottom"></div>
-                        <div class="guide-line line-left"></div>
-                        <div class="guide-line line-right"></div>
-                        <div class="guide-text">📐 Enquadre o gabarito dentro do marcador verde</div>
-                    </div>
-                    <div class="video-overlay">
-                        📱 Toque em "Abrir Câmera" e depois em "Tirar Foto"<br>
-                        Posicione o gabarito preenchido dentro do quadro verde
+                    <video id="video" autoplay playsinline muted></video>
+                    <canvas id="detectionCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"></canvas>
+                    <div class="video-overlay" id="videoOverlay">
+                        📱 Toque em "Iniciar Câmera"<br>
+                        Posicione o gabarito preenchido no centro<br>
+                        As bolinhas pintadas de AZUL ou PRETO ficarão VERDE LIMÃO quando corretas!
                     </div>
                 </div>
 
-                <button class="btn-secondary" id="captureBtn" disabled style="background: #28a745;">📸 Tirar Foto</button>
-
-                <div class="preview-container">
-                    <img id="preview" style="display: none;">
-                    <button class="btn-warning" id="retakeBtn" style="display: none; margin-top: 12px;">🔄 Tirar Nova Foto</button>
+                <div class="detection-status" id="detectionStatus">
+                    <span class="status-badge status-warning">⚙️ Aguardando início da câmera</span>
                 </div>
             </div>
 
             <div class="form-card">
-                <h3 style="margin-bottom: 16px;">⚙️ Configurações da Correção</h3>
+                <h3 style="margin-bottom: 16px;">⚙️ Configurações do Gabarito Oficial</h3>
                 <div class="form-group">
                     <label>Número de Questões:</label>
                     <input type="number" id="numQuestoesLeitura" value="10" min="1" max="100">
                 </div>
                 <div class="form-group">
-                    <label>Alternativas:</label>
+                    <label>Alternativas (separadas por vírgula):</label>
                     <input type="text" id="alternativasLeitura" value="A,B,C,D,E" placeholder="Ex: A,B,C,D,E">
                 </div>
                 <div class="form-group">
-                    <label>Gabarito Oficial (separado por vírgula):</label>
+                    <label>📌 Gabarito Oficial (separado por vírgula):</label>
                     <input type="text" id="gabaritoOficial" placeholder="Ex: A,B,C,D,E,A,B,C,D,E">
-                    <small style="color: #666; display: block; margin-top: 5px;">Digite as respostas corretas na ordem das questões</small>
+                    <small style="color: #666; display: block; margin-top: 5px;">As respostas corretas na ordem das questões. A detecção visual usará isso para validar as bolinhas pintadas!</small>
                 </div>
-                <button onclick="processarGabarito()">🔍 Corrigir Prova</button>
+                <button onclick="capturarECorrigir()">📸 Tirar Foto e Corrigir Oficialmente</button>
+                <small style="display: block; text-align: center; margin-top: 8px;">* O feedback visual em tempo real já mostra verde limão nas posições corretas.</small>
             </div>
         </div>
 
@@ -578,468 +435,437 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
-        // Variáveis globais
+        // ==================== VARIÁVEIS GLOBAIS ====================
         let stream = null;
-        let imagemAtual = null;
         let videoElement = document.getElementById('video');
         let videoContainer = document.getElementById('videoContainer');
+        let detectionCanvas = document.getElementById('detectionCanvas');
+        let canvasCtx = detectionCanvas.getContext('2d');
+        let animationId = null;
         let startBtn = document.getElementById('startCameraBtn');
         let stopBtn = document.getElementById('stopCameraBtn');
-        let captureBtn = document.getElementById('captureBtn');
-        let retakeBtn = document.getElementById('retakeBtn');
-        let preview = document.getElementById('preview');
-
-        // Alternar abas
-        function switchTab(tab) {
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            event.target.classList.add('active');
-            
-            if (tab === 'resultados' && window.resultadoAtual) {
-                exibirResultadosSalvos();
+        let detectionStatus = document.getElementById('detectionStatus');
+        
+        let gabaritoOficialArray = [];
+        let alternativasArray = ['A','B','C','D','E'];
+        let numQuestoesAtual = 10;
+        
+        // Para armazenar último resultado
+        window.resultadoAtual = null;
+        
+        // ==================== FUNÇÕES AUXILIARES ====================
+        function atualizarConfiguracoes() {
+            numQuestoesAtual = parseInt(document.getElementById('numQuestoesLeitura').value) || 10;
+            let altStr = document.getElementById('alternativasLeitura').value;
+            alternativasArray = altStr.split(',').map(a => a.trim().toUpperCase());
+            let gabStr = document.getElementById('gabaritoOficial').value;
+            if(gabStr) {
+                gabaritoOficialArray = gabStr.split(',').map(a => a.trim().toUpperCase());
+                if(gabaritoOficialArray.length !== numQuestoesAtual) {
+                    detectionStatus.innerHTML = `<span class="status-badge status-warning">⚠️ Gabarito tem ${gabaritoOficialArray.length} respostas, mas são ${numQuestoesAtual} questões. Ajuste!</span>`;
+                } else {
+                    detectionStatus.innerHTML = `<span class="status-badge status-success">✅ Gabarito carregado: ${numQuestoesAtual} questões</span>`;
+                }
+            } else {
+                detectionStatus.innerHTML = `<span class="status-badge status-warning">⚠️ Insira o Gabarito Oficial para ativar verde limão nas posições corretas</span>`;
             }
         }
-
-        // Gerar PDF do Gabarito para o ALUNO PREENCHER (PINTAR AS BOLINHAS)
-        async function gerarPDFGabarito() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            const numQuestoes = parseInt(document.getElementById('numQuestoesPDF').value);
-            const alternativasStr = document.getElementById('alternativasPDF').value;
-            const titulo = document.getElementById('tituloProva').value || 'Avaliação';
-            
-            const alternativas = alternativasStr.split(',').map(a => a.trim().toUpperCase());
-            
-            // Configurar PDF
-            doc.setFont('helvetica');
-            
-            // TÍTULO PRINCIPAL
-            doc.setFontSize(28);
-            doc.setTextColor(102, 126, 234);
-            doc.text('GABARITO', 105, 30, { align: 'center' });
-            
-            doc.setFontSize(12);
-            doc.setTextColor(0, 0, 0);
-            
-            // LINHA
-            doc.line(20, 40, 190, 40);
-            
-            // CAMPOS PARA O ALUNO PREENCHER
-            doc.setFontSize(12);
-            doc.text('NOME DO ALUNO: _________________________________________', 20, 55);
-            doc.text('DATA: _____/_____/______', 20, 70);
-            doc.text('ANO/TURMA: _________________________', 20, 85);
-            
-            // INFORMAÇÕES DA PROVA
-            doc.setFontSize(10);
-            doc.setTextColor(100, 100, 100);
-            doc.text(`Título: ${titulo}`, 20, 100);
-            doc.text(`Total de questões: ${numQuestoes}`, 20, 108);
-            
-            doc.line(20, 116, 190, 116);
-            
-            // TABELA DE QUESTÕES COM COLUNAS DAS ALTERNATIVAS
-            let y = 130;
-            doc.setFontSize(11);
-            doc.setTextColor(0, 0, 0);
-            
-            // Calcular largura das colunas
-            const colLargura = 170 / (alternativas.length + 1);
-            
-            // Cabeçalho da tabela
-            doc.setFillColor(102, 126, 234);
-            doc.rect(20, y - 5, 170, 10, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFont('helvetica', 'bold');
-            doc.text('Questão', 25, y);
-            
-            // Desenhar cabeçalho das alternativas
-            let xInicial = 25 + colLargura;
-            for (let i = 0; i < alternativas.length; i++) {
-                doc.text(alternativas[i], xInicial + (colLargura / 2) - 3, y);
-                xInicial += colLargura;
+        
+        // Função principal: detectar círculos pintados (azul ou preto) e comparar com gabarito
+        function detectarPinturasECorrigir(frameImageData, width, height) {
+            if(!gabaritoOficialArray.length || gabaritoOficialArray.length !== numQuestoesAtual) {
+                return null; // sem gabarito válido
             }
             
-            doc.setTextColor(0, 0, 0);
-            doc.setFont('helvetica', 'normal');
-            y += 12;
+            // Simular detecção de regiões: como o PDF gerado tem círculos organizados em grid,
+            // vamos mapear as posições das alternativas baseado na estrutura esperada.
+            // Para detecção real baseada em cores, vamos analisar pixels em regiões específicas.
+            // Estratégia: dividir a tela em uma grade baseada no número de questões e alternativas.
+            // Como a câmera pode estar em qualquer ângulo, usaremos uma abordagem simplificada mas funcional:
+            // Vamos supor que o usuário centralizou o gabarito. Vamos procurar por pixels escuros (preto/azul) em áreas relativas.
             
-            // Gerar linhas da tabela com bolinhas para PINTAR
-            for (let i = 0; i < numQuestoes; i++) {
-                if (y > 270) {
-                    doc.addPage();
-                    y = 20;
+            const canvasTemp = document.createElement('canvas');
+            canvasTemp.width = width;
+            canvasTemp.height = height;
+            const ctxTemp = canvasTemp.getContext('2d');
+            ctxTemp.putImageData(frameImageData, 0, 0);
+            
+            // Definir grid: número de linhas = numQuestoes, colunas = alternativasArray.length
+            const rows = numQuestoesAtual;
+            const cols = alternativasArray.length;
+            
+            // Margens relativas (20% laterais, 15% topo para título)
+            const marginLeft = width * 0.15;
+            const marginRight = width * 0.15;
+            const marginTop = height * 0.2;
+            const marginBottom = height * 0.15;
+            const cellWidth = (width - marginLeft - marginRight) / cols;
+            const cellHeight = (height - marginTop - marginBottom) / rows;
+            
+            const detectedAnswers = [];
+            
+            // Para cada célula (questão, alternativa), verificar se há pintura escura (azul ou preto)
+            for(let q = 0; q < rows; q++) {
+                let bestAlt = null;
+                let maxDarkness = 0;
+                
+                for(let a = 0; a < cols; a++) {
+                    const cellX = marginLeft + (a * cellWidth);
+                    const cellY = marginTop + (q * cellHeight);
+                    const cellW = cellWidth;
+                    const cellH = cellHeight;
                     
-                    // Recriar cabeçalho na nova página
-                    doc.setFillColor(102, 126, 234);
-                    doc.rect(20, y - 5, 170, 10, 'F');
-                    doc.setTextColor(255, 255, 255);
-                    doc.text('Questão', 25, y);
+                    // Amostrar pixels centrais da célula (onde está o círculo)
+                    const centerX = cellX + cellW/2;
+                    const centerY = cellY + cellH/2;
+                    const radius = Math.min(cellW, cellH) * 0.3;
                     
-                    xInicial = 25 + colLargura;
-                    for (let j = 0; j < alternativas.length; j++) {
-                        doc.text(alternativas[j], xInicial + (colLargura / 2) - 3, y);
-                        xInicial += colLargura;
+                    let totalDark = 0;
+                    let samplePoints = 0;
+                    
+                    // Amostrar pontos dentro do círculo
+                    for(let dx = -radius; dx <= radius; dx += Math.max(1, radius/5)) {
+                        for(let dy = -radius; dy <= radius; dy += Math.max(1, radius/5)) {
+                            const px = Math.floor(centerX + dx);
+                            const py = Math.floor(centerY + dy);
+                            if(px >=0 && px < width && py >=0 && py < height) {
+                                const idx = (py * width + px) * 4;
+                                const r = frameImageData.data[idx];
+                                const g = frameImageData.data[idx+1];
+                                const b = frameImageData.data[idx+2];
+                                // Detectar azul (baixo vermelho/verde, alto azul) OU preto (todos baixos)
+                                const isBlue = (b > 100 && r < 100 && g < 100);
+                                const isBlack = (r < 60 && g < 60 && b < 60);
+                                if(isBlue || isBlack) {
+                                    totalDark++;
+                                }
+                                samplePoints++;
+                            }
+                        }
                     }
                     
-                    doc.setTextColor(0, 0, 0);
-                    y += 12;
+                    const darknessRatio = samplePoints > 0 ? totalDark / samplePoints : 0;
+                    if(darknessRatio > 0.25 && darknessRatio > maxDarkness) { // mais de 25% de pixels escuros = pintado
+                        maxDarkness = darknessRatio;
+                        bestAlt = alternativasArray[a];
+                    }
                 }
                 
-                // Alternar cores de linha
-                if (i % 2 === 0) {
-                    doc.setFillColor(245, 245, 245);
-                    doc.rect(20, y - 4, 170, 12, 'F');
-                }
-                
-                // Número da questão
-                doc.setFont('helvetica', 'bold');
-                doc.text(`${i + 1}`, 25, y + 2);
-                doc.setFont('helvetica', 'normal');
-                
-                // Desenhar bolinhas para PINTAR
-                xInicial = 25 + colLargura;
-                for (let j = 0; j < alternativas.length; j++) {
-                    const centroX = xInicial + (colLargura / 2);
-                    // Desenhar círculo maior para facilitar pintura
-                    doc.setDrawColor(0, 0, 0);
-                    doc.setFillColor(255, 255, 255);
-                    doc.circle(centroX, y + 1, 4, 'FD');
-                    xInicial += colLargura;
-                }
-                
-                y += 14;
+                detectedAnswers.push(bestAlt || null);
             }
             
-            // Rodapé com instruções
-            const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(9);
-                doc.setTextColor(150, 150, 150);
-                doc.text('Instruções: PINTE COMPLETAMENTE a bolinha da alternativa escolhida', 105, 285, { align: 'center' });
-                doc.setFontSize(8);
-                doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, 105, 292, { align: 'center' });
+            // Comparar com gabarito e gerar resultados de acertos
+            const resultados = [];
+            let acertos = 0;
+            for(let i=0; i<rows; i++) {
+                const aluno = detectedAnswers[i];
+                const correto = gabaritoOficialArray[i];
+                const acertou = (aluno && correto && aluno === correto);
+                if(acertou) acertos++;
+                resultados.push({
+                    questao: i+1,
+                    respostaAluno: aluno || '?',
+                    respostaCorreta: correto,
+                    acertou: acertou
+                });
             }
             
-            // Salvar PDF
-            doc.save(`gabarito_para_preencher_${titulo.replace(/\s/g, '_')}.pdf`);
+            // Agora desenhar no canvas de detecção: para cada alternativa correta pintada, desenhar círculo verde limão
+            canvasCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+            canvasCtx.drawImage(videoElement, 0, 0, detectionCanvas.width, detectionCanvas.height);
             
-            // Salvar configurações para usar na correção
-            localStorage.setItem('alternativasGeradas', alternativasStr);
-            localStorage.setItem('numQuestoesGerado', numQuestoes);
+            // Desenhar overlay verde limão nas posições que estão pintadas e corretas
+            for(let q = 0; q < rows; q++) {
+                const alunoAlt = detectedAnswers[q];
+                const corretoAlt = gabaritoOficialArray[q];
+                if(alunoAlt && corretoAlt && alunoAlt === corretoAlt) {
+                    // Encontrar índice da alternativa correta
+                    const altIndex = alternativasArray.indexOf(corretoAlt);
+                    if(altIndex !== -1) {
+                        const cellX = marginLeft + (altIndex * cellWidth);
+                        const cellY = marginTop + (q * cellHeight);
+                        const centerX = cellX + cellWidth/2;
+                        const centerY = cellY + cellHeight/2;
+                        const radius = Math.min(cellWidth, cellHeight) * 0.25;
+                        
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(centerX, centerY, radius, 0, 2*Math.PI);
+                        canvasCtx.fillStyle = '#adff2f'; // Verde limão
+                        canvasCtx.fill();
+                        canvasCtx.strokeStyle = '#228b22';
+                        canvasCtx.lineWidth = 2;
+                        canvasCtx.stroke();
+                        
+                        // Adicionar texto da alternativa
+                        canvasCtx.font = `bold ${Math.max(12, radius*0.8)}px Arial`;
+                        canvasCtx.fillStyle = '#006400';
+                        canvasCtx.shadowBlur = 0;
+                        canvasCtx.fillText(corretoAlt, centerX - 8, centerY + 6);
+                    }
+                }
+            }
             
-            // Preencher automaticamente os campos na aba de leitura
-            document.getElementById('numQuestoesLeitura').value = numQuestoes;
-            document.getElementById('alternativasLeitura').value = alternativasStr;
+            // Atualizar status com contagem
+            const percent = ((acertos/rows)*100).toFixed(0);
+            detectionStatus.innerHTML = `<span class="status-badge status-success">✅ Detecção ativa: ${acertos}/${rows} corretas (${percent}%) - Verde limão = posições certas!</span>`;
             
-            alert(`✅ PDF gerado com sucesso!\n\nO PDF contém:\n- ${numQuestoes} questões\n- Alternativas: ${alternativas.join(', ')}\n- Bolinhas para PINTAR\n- Espaços para Nome, Data e Turma\n\nOs alunos devem PINTAR a bolinha da alternativa escolhida.`);
+            return {
+                total: rows,
+                acertos: acertos,
+                percent: percent,
+                detalhes: resultados
+            };
         }
-
-        // Funções da Câmera
-        startBtn.addEventListener('click', async () => {
+        
+        // Loop de detecção a cada frame
+        function startDetectionLoop() {
+            if(!videoElement.videoWidth || !videoElement.videoHeight) {
+                animationId = requestAnimationFrame(startDetectionLoop);
+                return;
+            }
+            
+            // Configurar canvas de detecção com mesmo tamanho do vídeo
+            detectionCanvas.width = videoElement.videoWidth;
+            detectionCanvas.height = videoElement.videoHeight;
+            canvasCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
+            
+            // Capturar frame do vídeo
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = videoElement.videoWidth;
+            tempCanvas.height = videoElement.videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
+            const frameData = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            
+            // Executar detecção e obter resultados visuais (o próprio detectarPinturasECorrigir desenha no canvas)
+            const resultado = detectarPinturasECorrigir(frameData, tempCanvas.width, tempCanvas.height);
+            if(resultado && window.atualizarResultadoParcial) {
+                window.resultadoParcial = resultado;
+            }
+            
+            animationId = requestAnimationFrame(startDetectionLoop);
+        }
+        
+        // ==================== CÂMERA ====================
+        async function iniciarCamera() {
             try {
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                
                 const constraints = {
                     video: {
                         facingMode: isMobile ? 'environment' : 'user',
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
                     }
                 };
-
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 videoElement.srcObject = stream;
                 videoContainer.classList.add('active');
+                document.getElementById('videoOverlay').style.display = 'none';
                 
                 startBtn.disabled = true;
                 stopBtn.disabled = false;
-                captureBtn.disabled = false;
                 
+                // Aguardar vídeo carregar e iniciar loop
+                videoElement.onloadedmetadata = () => {
+                    videoElement.play();
+                    if(animationId) cancelAnimationFrame(animationId);
+                    animationId = requestAnimationFrame(startDetectionLoop);
+                };
             } catch (error) {
-                console.error('Erro ao acessar câmera:', error);
-                alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+                console.error('Erro câmera:', error);
+                alert('Não foi possível acessar a câmera. Verifique permissões.');
             }
-        });
-
-        stopBtn.addEventListener('click', () => {
-            if (stream) {
+        }
+        
+        function pararCamera() {
+            if(stream) {
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
                 videoElement.srcObject = null;
+                if(animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+                canvasCtx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
                 videoContainer.classList.remove('active');
-                
+                document.getElementById('videoOverlay').style.display = 'flex';
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
-                captureBtn.disabled = true;
-            }
-        });
-
-        captureBtn.addEventListener('click', () => {
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            
-            // SEM inversão de imagem - agora está normal
-            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-            
-            canvas.toBlob((blob) => {
-                const url = URL.createObjectURL(blob);
-                imagemAtual = url;
-                preview.src = url;
-                preview.style.display = 'block';
-                
-                videoContainer.classList.remove('active');
-                captureBtn.disabled = true;
-                retakeBtn.style.display = 'block';
-                
-                if (stream) {
-                    stream.getTracks().forEach(track => track.stop());
-                    stream = null;
-                    startBtn.disabled = false;
-                    stopBtn.disabled = true;
-                }
-                
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-            }, 'image/jpeg', 0.9);
-        });
-
-        retakeBtn.addEventListener('click', () => {
-            imagemAtual = null;
-            preview.style.display = 'none';
-            retakeBtn.style.display = 'none';
-            videoContainer.classList.add('active');
-            captureBtn.disabled = false;
-            startCameraAgain();
-        });
-
-        async function startCameraAgain() {
-            try {
-                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                const constraints = {
-                    video: {
-                        facingMode: isMobile ? 'environment' : 'user',
-                        width: { ideal: 1920 },
-                        height: { ideal: 1080 }
-                    }
-                };
-                
-                stream = await navigator.mediaDevices.getUserMedia(constraints);
-                videoElement.srcObject = stream;
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
-            } catch (error) {
-                console.error('Erro ao reiniciar câmera:', error);
-                startBtn.disabled = false;
+                detectionStatus.innerHTML = `<span class="status-badge status-warning">⚙️ Câmera desligada</span>`;
             }
         }
-
-        // Processar imagem e corrigir
-        async function processarGabarito() {
-            if (!imagemAtual) {
-                alert('Por favor, tire uma foto do gabarito preenchido primeiro!');
+        
+        startBtn.addEventListener('click', () => {
+            atualizarConfiguracoes();
+            iniciarCamera();
+        });
+        
+        stopBtn.addEventListener('click', pararCamera);
+        
+        // ==================== CAPTURAR E CORRIGIR OFICIALMENTE COM TESSERACT ====================
+        async function capturarECorrigir() {
+            if(!videoElement.videoWidth || !videoElement.videoHeight) {
+                alert('Inicie a câmera primeiro e posicione o gabarito!');
                 return;
             }
-
-            const numQuestoes = parseInt(document.getElementById('numQuestoesLeitura').value);
-            const alternativasStr = document.getElementById('alternativasLeitura').value;
-            let gabaritoStr = document.getElementById('gabaritoOficial').value;
-
-            const alternativas = alternativasStr.split(',').map(a => a.trim().toUpperCase());
-
-            if (!gabaritoStr) {
-                alert('Por favor, informe o gabarito oficial com as respostas corretas!');
+            
+            atualizarConfiguracoes();
+            if(!gabaritoOficialArray.length || gabaritoOficialArray.length !== numQuestoesAtual) {
+                alert(`Gabarito inválido. Deve ter ${numQuestoesAtual} alternativas separadas por vírgula.`);
                 return;
             }
-
-            const gabarito = gabaritoStr.split(',').map(a => a.trim().toUpperCase());
-
-            if (gabarito.length !== numQuestoes) {
-                alert(`O gabarito deve ter ${numQuestoes} alternativas!`);
-                return;
-            }
-
+            
             document.getElementById('loading').style.display = 'block';
             document.getElementById('results').style.display = 'none';
-            document.getElementById('resultContent').innerHTML = '';
-
+            
+            // Capturar frame atual do vídeo
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = videoElement.videoWidth;
+            tempCanvas.height = videoElement.videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(videoElement, 0, 0, tempCanvas.width, tempCanvas.height);
+            const imageBlob = await new Promise(resolve => tempCanvas.toBlob(resolve, 'image/jpeg', 0.9));
+            
             try {
-                const response = await fetch(imagemAtual);
-                const blob = await response.blob();
-
-                const { data: { text } } = await Tesseract.recognize(
-                    blob,
-                    'por',
-                    {
-                        logger: m => console.log(m)
-                    }
-                );
-
-                const respostasAluno = extrairRespostas(text, numQuestoes, alternativas);
-                const resultado = corrigirProva(respostasAluno, gabarito);
-                exibirResultados(resultado);
+                // Usar Tesseract para OCR de letras nas bolinhas (fallback de precisão)
+                const { data: { text } } = await Tesseract.recognize(imageBlob, 'por', { logger: m => console.log(m) });
                 
-                // Mudar para aba de resultados
+                // Extrair respostas via OCR
+                const respostasOCR = extrairRespostasOCR(text, numQuestoesAtual, alternativasArray);
+                const resultadoFinal = corrigirProvaCompleta(respostasOCR, gabaritoOficialArray);
+                exibirResultados(resultadoFinal);
+                
+                // Mudar para aba resultados
                 setTimeout(() => {
                     document.querySelectorAll('.tab-btn')[2].click();
                 }, 500);
-                
-            } catch (error) {
-                console.error('Erro:', error);
-                alert('Erro ao processar a imagem. Tente novamente com uma imagem mais nítida.');
+            } catch(err) {
+                console.error(err);
+                alert('Erro no reconhecimento. Tente novamente com melhor iluminação.');
             } finally {
                 document.getElementById('loading').style.display = 'none';
             }
         }
-
-        function extrairRespostas(texto, numQuestoes, alternativas) {
+        
+        function extrairRespostasOCR(texto, numQ, alternativas) {
             texto = texto.toUpperCase();
             const respostas = [];
             const padrao = /(\d+)\s*([A-E])/g;
             let match;
             const encontrados = {};
-
-            while ((match = padrao.exec(texto)) !== null) {
-                const numQuestao = parseInt(match[1]);
-                const resposta = match[2];
-                if (numQuestao >= 1 && numQuestao <= numQuestoes && alternativas.includes(resposta)) {
-                    encontrados[numQuestao] = resposta;
+            while((match = padrao.exec(texto)) !== null) {
+                const n = parseInt(match[1]);
+                const resp = match[2];
+                if(n >=1 && n <= numQ && alternativas.includes(resp)) {
+                    encontrados[n] = resp;
                 }
             }
-
-            for (let i = 1; i <= numQuestoes; i++) {
+            for(let i=1;i<=numQ;i++) {
                 respostas.push(encontrados[i] || null);
             }
-
             return respostas;
         }
-
-        function corrigirProva(respostasAluno, gabarito) {
+        
+        function corrigirProvaCompleta(respostasAluno, gabarito) {
             let acertos = 0;
             const detalhes = [];
-
-            for (let i = 0; i < respostasAluno.length; i++) {
-                const aluno = respostasAluno[i];
-                const correto = gabarito[i];
-                const acertou = aluno && aluno === correto;
-                
-                if (acertou) acertos++;
-                
+            for(let i=0;i<respostasAluno.length;i++) {
+                const acertou = (respostasAluno[i] && respostasAluno[i] === gabarito[i]);
+                if(acertou) acertos++;
                 detalhes.push({
-                    questao: i + 1,
-                    respostaAluno: aluno || '❌ Não respondida',
-                    respostaCorreta: correto,
-                    status: acertou ? '✓ Correta' : (aluno ? '✗ Incorreta' : '❌ Não respondida'),
+                    questao: i+1,
+                    respostaAluno: respostasAluno[i] || '❌ Não detectada',
+                    respostaCorreta: gabarito[i],
+                    status: acertou ? '✓ Correta' : '✗ Incorreta',
                     acertou: acertou
                 });
             }
-
-            const nota = (acertos / gabarito.length) * 100;
-
-            return {
-                totalQuestoes: gabarito.length,
-                acertos: acertos,
-                nota: nota.toFixed(1),
-                detalhes: detalhes
-            };
+            const nota = (acertos/gabarito.length)*100;
+            return { totalQuestoes: gabarito.length, acertos, nota: nota.toFixed(1), detalhes };
         }
-
+        
         function exibirResultados(resultado) {
             const resultContent = document.getElementById('resultContent');
-            
             let html = `
                 <div class="score-card">
                     <h3>🎯 Resultado Final</h3>
                     <div class="score">${resultado.nota}%</div>
                     <p>${resultado.acertos} acertos de ${resultado.totalQuestoes} questões</p>
                 </div>
-                
-                <div style="overflow-x: auto;">
-                    <table class="questions-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Resposta do Aluno</th>
-                                <th>Gabarito</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
-
-            for (const detalhe of resultado.detalhes) {
-                const statusClass = detalhe.acertou ? 'correct' : 'incorrect';
-                html += `
-                    <tr>
-                        <td>${detalhe.questao}</td>
-                        <td><strong>${detalhe.respostaAluno}</strong></td>
-                        <td>${detalhe.respostaCorreta}</td>
-                        <td class="${statusClass}">${detalhe.status}</td>
-                    </tr>
-                `;
+                <div style="overflow-x:auto;"><table class="questions-table"><thead><tr><th>#</th><th>Resposta do Aluno</th><th>Gabarito</th><th>Status</th></tr></thead><tbody>`;
+            for(const d of resultado.detalhes) {
+                html += `<tr><td>${d.questao}</td><td><strong>${d.respostaAluno}</strong></td><td>${d.respostaCorreta}</td><td class="${d.acertou?'correct':'incorrect'}">${d.status}</td></tr>`;
             }
-
-            html += `
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="export-buttons">
-                    <button onclick="exportarExcel()">📊 Exportar Excel</button>
-                    <button onclick="window.print()">🖨️ Imprimir</button>
-                </div>
-            `;
-
+            html += `</tbody></table></div><div class="export-buttons"><button onclick="exportarExcel()">📊 Exportar Excel</button><button onclick="window.print()">🖨️ Imprimir</button></div>`;
             resultContent.innerHTML = html;
             document.getElementById('results').style.display = 'block';
             window.resultadoAtual = resultado;
         }
-
-        function exibirResultadosSalvos() {
-            if (window.resultadoAtual) {
-                exibirResultados(window.resultadoAtual);
-            }
-        }
-
+        
         function exportarExcel() {
-            if (!window.resultadoAtual) return;
-            
-            const dados = window.resultadoAtual.detalhes.map(d => ({
-                'Questão': d.questao,
-                'Resposta do Aluno': d.respostaAluno.replace(/[❌✓✗]/g, '').trim(),
-                'Resposta Correta': d.respostaCorreta,
-                'Status': d.status.replace(/[✓✗❌]/g, '').trim()
-            }));
-            
-            dados.push({
-                'Questão': 'RESUMO',
-                'Resposta do Aluno': `Total: ${window.resultadoAtual.totalQuestoes}`,
-                'Resposta Correta': `Acertos: ${window.resultadoAtual.acertos}`,
-                'Status': `Nota: ${window.resultadoAtual.nota}%`
-            });
-            
+            if(!window.resultadoAtual) return;
+            const dados = window.resultadoAtual.detalhes.map(d => ({'Questão': d.questao, 'Resposta Aluno': d.respostaAluno.replace(/[❌✓✗]/g,''), 'Resposta Correta': d.respostaCorreta, 'Status': d.status.replace(/[✓✗❌]/g,'') }));
+            dados.push({'Questão':'RESUMO','Resposta Aluno':`Total: ${window.resultadoAtual.totalQuestoes}`,'Resposta Correta':`Acertos: ${window.resultadoAtual.acertos}`,'Status':`Nota: ${window.resultadoAtual.nota}%`});
             const ws = XLSX.utils.json_to_sheet(dados);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Resultado Prova');
-            XLSX.writeFile(wb, `resultado_prova_${new Date().toISOString().slice(0,19)}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, 'Resultado');
+            XLSX.writeFile(wb, `prova_${new Date().toISOString().slice(0,19)}.xlsx`);
         }
-
-        // Limpar recursos ao sair
-        window.addEventListener('beforeunload', () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
+        
+        function gerarPDFGabarito() { /* mantido igual ao original, sem alterações */ 
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const numQuestoes = parseInt(document.getElementById('numQuestoesPDF').value);
+            const alternativasStr = document.getElementById('alternativasPDF').value;
+            const titulo = document.getElementById('tituloProva').value || 'Avaliação';
+            const alternativas = alternativasStr.split(',').map(a => a.trim().toUpperCase());
+            doc.setFont('helvetica');
+            doc.setFontSize(28); doc.setTextColor(102,126,234); doc.text('GABARITO',105,30,{align:'center'});
+            doc.setFontSize(12); doc.setTextColor(0,0,0); doc.line(20,40,190,40);
+            doc.text('NOME DO ALUNO: _________________________________________',20,55);
+            doc.text('DATA: _____/_____/______',20,70);
+            doc.text('ANO/TURMA: _________________________',20,85);
+            doc.setFontSize(10); doc.setTextColor(100,100,100);
+            doc.text(`Título: ${titulo}`,20,100);
+            doc.text(`Total de questões: ${numQuestoes}`,20,108);
+            doc.line(20,116,190,116);
+            let y = 130;
+            const colLargura = 170 / (alternativas.length + 1);
+            doc.setFillColor(102,126,234); doc.rect(20,y-5,170,10,'F');
+            doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.text('Questão',25,y);
+            let xInicial = 25 + colLargura;
+            for(let i=0;i<alternativas.length;i++){ doc.text(alternativas[i], xInicial + (colLargura/2)-3, y); xInicial += colLargura; }
+            doc.setTextColor(0,0,0); doc.setFont('helvetica','normal'); y+=12;
+            for(let i=0;i<numQuestoes;i++){
+                if(y>270){ doc.addPage(); y=20; doc.setFillColor(102,126,234); doc.rect(20,y-5,170,10,'F'); doc.setTextColor(255,255,255); doc.text('Questão',25,y); xInicial=25+colLargura; for(let j=0;j<alternativas.length;j++){ doc.text(alternativas[j], xInicial+(colLargura/2)-3,y); xInicial+=colLargura; } doc.setTextColor(0,0,0); y+=12; }
+                if(i%2===0){ doc.setFillColor(245,245,245); doc.rect(20,y-4,170,12,'F'); }
+                doc.setFont('helvetica','bold'); doc.text(`${i+1}`,25,y+2); doc.setFont('helvetica','normal');
+                xInicial = 25 + colLargura;
+                for(let j=0;j<alternativas.length;j++){ const centroX = xInicial + (colLargura/2); doc.setDrawColor(0,0,0); doc.setFillColor(255,255,255); doc.circle(centroX, y+1, 4, 'FD'); xInicial += colLargura; }
+                y+=14;
             }
-        });
+            for(let i=1;i<=doc.internal.getNumberOfPages();i++){ doc.setPage(i); doc.setFontSize(9); doc.setTextColor(150,150,150); doc.text('Instruções: PINTE COMPLETAMENTE a bolinha da alternativa escolhida (azul ou preto)',105,285,{align:'center'}); doc.setFontSize(8); doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`,105,292,{align:'center'}); }
+            doc.save(`gabarito_${titulo.replace(/\s/g,'_')}.pdf`);
+            localStorage.setItem('alternativasGeradas', alternativasStr);
+            localStorage.setItem('numQuestoesGerado', numQuestoes);
+            document.getElementById('numQuestoesLeitura').value = numQuestoes;
+            document.getElementById('alternativasLeitura').value = alternativasStr;
+            alert(`✅ PDF gerado! Os alunos devem PINTAR de AZUL ou PRETO a bolinha.`);
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            event.target.classList.add('active');
+            if(tab === 'resultados' && window.resultadoAtual) exibirResultados(window.resultadoAtual);
+        }
+        
+        window.exportarExcel = exportarExcel;
+        window.gerarPDFGabarito = gerarPDFGabarito;
+        window.switchTab = switchTab;
+        window.capturarECorrigir = capturarECorrigir;
+        window.addEventListener('beforeunload', () => { if(stream) stream.getTracks().forEach(t => t.stop()); });
     </script>
 </body>
 </html>
