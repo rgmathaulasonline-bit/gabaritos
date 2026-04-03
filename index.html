@@ -2,148 +2,218 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitor de Gabarito Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Sistema de Gabarito - Gerar PDF e Corrigir</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 700px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
+            border-radius: 24px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
-            padding: 30px;
+            padding: 20px;
         }
 
         h1 {
             color: #333;
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 1.5rem;
         }
 
         .subtitle {
             text-align: center;
             color: #666;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
+            font-size: 0.9rem;
         }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
         }
 
-        @media (max-width: 768px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .upload-area {
-            border: 2px dashed #667eea;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
+        .tab-btn {
+            background: none;
+            color: #666;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: none;
+            border-bottom: 3px solid transparent;
             cursor: pointer;
             transition: all 0.3s;
-            background: #f8f9ff;
         }
 
-        .upload-area:hover {
-            border-color: #764ba2;
-            background: #f0f2ff;
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
         }
 
-        .upload-area.dragover {
-            border-color: #764ba2;
-            background: #e8ebff;
-        }
-
-        #imageInput {
+        .tab-content {
             display: none;
+            animation: fadeIn 0.3s;
         }
 
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 10px;
+        .tab-content.active {
+            display: block;
         }
 
-        .preview-container {
-            margin-top: 20px;
-            text-align: center;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        #preview {
-            max-width: 100%;
-            max-height: 400px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .gabarito-config {
+        /* Formulário */
+        .form-card {
             background: #f8f9ff;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 16px;
             margin-bottom: 20px;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 16px;
         }
 
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             color: #333;
             font-weight: 600;
+            font-size: 0.9rem;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
+            padding: 14px 20px;
+            border-radius: 12px;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 1rem;
             font-weight: 600;
             transition: transform 0.2s;
             width: 100%;
         }
 
-        button:hover {
-            transform: translateY(-2px);
-        }
-
         button:active {
-            transform: translateY(0);
+            transform: scale(0.98);
         }
 
+        .btn-secondary {
+            background: #28a745;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        /* Câmera */
+        .camera-section {
+            margin-bottom: 20px;
+        }
+
+        .camera-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            margin-bottom: 16px;
+        }
+
+        #video {
+            width: 100%;
+            height: auto;
+            display: none;
+            transform: scaleX(-1);
+        }
+
+        .video-container.active #video {
+            display: block;
+        }
+
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .video-container.active .video-overlay {
+            display: none;
+        }
+
+        .preview-container {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        #preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: none;
+            margin: 0 auto;
+        }
+
+        /* Loading */
         .loading {
             display: none;
             text-align: center;
             margin: 20px 0;
+            padding: 20px;
         }
 
         .spinner {
@@ -153,7 +223,7 @@
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 0 auto;
+            margin: 0 auto 12px;
         }
 
         @keyframes spin {
@@ -161,39 +231,36 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Resultados */
         .results {
-            margin-top: 30px;
+            margin-top: 24px;
             display: none;
-        }
-
-        .results h2 {
-            color: #333;
-            margin-bottom: 20px;
         }
 
         .score-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 16px;
             text-align: center;
             margin-bottom: 20px;
         }
 
         .score {
-            font-size: 48px;
+            font-size: 3rem;
             font-weight: bold;
         }
 
         .questions-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 16px;
+            font-size: 0.85rem;
         }
 
         .questions-table th,
         .questions-table td {
-            padding: 12px;
+            padding: 10px 8px;
             text-align: left;
             border-bottom: 1px solid #ddd;
         }
@@ -203,17 +270,13 @@
             color: white;
         }
 
-        .questions-table tr:hover {
-            background: #f5f5f5;
-        }
-
         .correct {
-            color: green;
+            color: #28a745;
             font-weight: bold;
         }
 
         .incorrect {
-            color: red;
+            color: #dc3545;
             font-weight: bold;
         }
 
@@ -221,18 +284,29 @@
             display: flex;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
 
         .export-buttons button {
-            background: #28a745;
+            flex: 1;
         }
 
-        .export-buttons button:last-child {
-            background: #17a2b8;
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .camera-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .questions-table {
+                font-size: 0.7rem;
+            }
         }
 
         @media print {
-            .upload-area, .gabarito-config, .export-buttons, button {
+            .tabs, .camera-section, .form-card, .export-buttons, button {
                 display: none;
             }
         }
@@ -240,117 +314,391 @@
 </head>
 <body>
     <div class="container">
-        <h1>📝 Leitor de Gabarito Online</h1>
-        <p class="subtitle">Upload da imagem do cartão-resposta para correção automática</p>
+        <h1>📸 Sistema de Gabarito</h1>
+        <p class="subtitle">Gere o PDF para os alunos preencherem e depois corrija</p>
 
-        <div class="main-content">
-            <div>
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">📸</div>
-                    <p>Clique ou arraste uma imagem aqui</p>
-                    <p style="font-size: 12px; color: #666; margin-top: 10px;">Formatos: JPG, PNG, GIF</p>
-                    <input type="file" id="imageInput" accept="image/*">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('gerar')">📄 Gerar PDF do Gabarito</button>
+            <button class="tab-btn" onclick="switchTab('ler')">📷 Ler Respostas</button>
+            <button class="tab-btn" onclick="switchTab('resultados')">📊 Resultados</button>
+        </div>
+
+        <!-- Aba Gerar PDF -->
+        <div id="tab-gerar" class="tab-content active">
+            <div class="form-card">
+                <h3 style="margin-bottom: 16px;">⚙️ Configurações do Gabarito</h3>
+                <div class="form-group">
+                    <label>📝 Número de Questões:</label>
+                    <input type="number" id="numQuestoesPDF" value="10" min="1" max="50">
                 </div>
+                <div class="form-group">
+                    <label>🔤 Alternativas:</label>
+                    <input type="text" id="alternativasPDF" value="A,B,C,D,E" placeholder="Ex: A,B,C,D,E">
+                </div>
+                <div class="form-group">
+                    <label>📚 Título da Prova:</label>
+                    <input type="text" id="tituloProva" placeholder="Ex: Prova de Matemática - 1º Bimestre">
+                </div>
+                <button onclick="gerarPDFGabarito()">📄 Gerar PDF para Alunos</button>
+            </div>
+            
+            <div class="form-card" style="background: #fff3cd; border: 1px solid #ffc107;">
+                <h3 style="margin-bottom: 8px;">ℹ️ Instruções</h3>
+                <p style="font-size: 0.9rem; color: #856404;">
+                    1. Configure o número de questões e alternativas<br>
+                    2. Clique em "Gerar PDF para Alunos"<br>
+                    3. Imprima o PDF gerado<br>
+                    4. Os alunos preencherão NOME, DATA e TURMA<br>
+                    5. Os alunos devem PINTAR a bolinha da alternativa escolhida<br>
+                    6. Após preenchido, tire uma foto para correção
+                </p>
+            </div>
+        </div>
+
+        <!-- Aba Ler Respostas -->
+        <div id="tab-ler" class="tab-content">
+            <div class="camera-section">
+                <div class="camera-buttons">
+                    <button class="btn-secondary" id="startCameraBtn">📷 Abrir Câmera</button>
+                    <button class="btn-warning" id="stopCameraBtn" disabled>🔴 Fechar Câmera</button>
+                </div>
+
+                <div class="video-container" id="videoContainer">
+                    <video id="video" autoplay playsinline></video>
+                    <div class="video-overlay">
+                        📱 Toque em "Abrir Câmera" e depois em "Tirar Foto"<br>
+                        Posicione o gabarito preenchido dentro do quadro
+                    </div>
+                </div>
+
+                <button class="btn-secondary" id="captureBtn" disabled style="background: #28a745;">📸 Tirar Foto</button>
+
                 <div class="preview-container">
                     <img id="preview" style="display: none;">
+                    <button class="btn-warning" id="retakeBtn" style="display: none; margin-top: 12px;">🔄 Tirar Nova Foto</button>
                 </div>
             </div>
 
-            <div>
-                <div class="gabarito-config">
-                    <h3 style="margin-bottom: 15px;">Configurações</h3>
-                    <div class="form-group">
-                        <label>Número de Questões:</label>
-                        <input type="number" id="numQuestoes" value="10" min="1" max="100">
-                    </div>
-                    <div class="form-group">
-                        <label>Alternativas:</label>
-                        <input type="text" id="alternativas" value="A,B,C,D,E" placeholder="Ex: A,B,C,D,E">
-                    </div>
-                    <div class="form-group">
-                        <label>Gabarito Oficial:</label>
-                        <input type="text" id="gabarito" placeholder="Ex: A,B,C,D,E,A,B,C,D,E">
-                    </div>
-                    <button onclick="processarGabarito()">🔍 Corrigir Prova</button>
+            <div class="form-card">
+                <h3 style="margin-bottom: 16px;">⚙️ Configurações da Correção</h3>
+                <div class="form-group">
+                    <label>Número de Questões:</label>
+                    <input type="number" id="numQuestoesLeitura" value="10" min="1" max="100">
                 </div>
+                <div class="form-group">
+                    <label>Alternativas:</label>
+                    <input type="text" id="alternativasLeitura" value="A,B,C,D,E" placeholder="Ex: A,B,C,D,E">
+                </div>
+                <div class="form-group">
+                    <label>Gabarito Oficial (separado por vírgula):</label>
+                    <input type="text" id="gabaritoOficial" placeholder="Ex: A,B,C,D,E,A,B,C,D,E">
+                    <small style="color: #666; display: block; margin-top: 5px;">Digite as respostas corretas na ordem das questões</small>
+                </div>
+                <button onclick="processarGabarito()">🔍 Corrigir Prova</button>
             </div>
         </div>
 
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p style="margin-top: 10px;">Processando imagem...</p>
-        </div>
-
-        <div class="results" id="results">
-            <h2>📊 Resultado da Correção</h2>
-            <div id="resultContent"></div>
+        <!-- Aba Resultados -->
+        <div id="tab-resultados" class="tab-content">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Processando imagem com IA...</p>
+            </div>
+            <div class="results" id="results">
+                <div id="resultContent"></div>
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
+        // Variáveis globais
+        let stream = null;
         let imagemAtual = null;
+        let videoElement = document.getElementById('video');
+        let videoContainer = document.getElementById('videoContainer');
+        let startBtn = document.getElementById('startCameraBtn');
+        let stopBtn = document.getElementById('stopCameraBtn');
+        let captureBtn = document.getElementById('captureBtn');
+        let retakeBtn = document.getElementById('retakeBtn');
+        let preview = document.getElementById('preview');
 
-        // Upload de imagem
-        const uploadArea = document.getElementById('uploadArea');
-        const imageInput = document.getElementById('imageInput');
-        const preview = document.getElementById('preview');
-
-        uploadArea.addEventListener('click', () => {
-            imageInput.click();
-        });
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file && file.type.startsWith('image/')) {
-                processImage(file);
+        // Alternar abas
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tab === 'resultados' && window.resultadoAtual) {
+                exibirResultadosSalvos();
             }
-        });
-
-        imageInput.addEventListener('change', (e) => {
-            if (e.target.files[0]) {
-                processImage(e.target.files[0]);
-            }
-        });
-
-        function processImage(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imagemAtual = e.target.result;
-                preview.src = imagemAtual;
-                preview.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
         }
 
+        // Gerar PDF do Gabarito para o ALUNO PREENCHER (PINTAR AS BOLINHAS)
+        async function gerarPDFGabarito() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const numQuestoes = parseInt(document.getElementById('numQuestoesPDF').value);
+            const alternativasStr = document.getElementById('alternativasPDF').value;
+            const titulo = document.getElementById('tituloProva').value || 'Avaliação';
+            
+            const alternativas = alternativasStr.split(',').map(a => a.trim().toUpperCase());
+            
+            // Configurar PDF
+            doc.setFont('helvetica');
+            
+            // TÍTULO PRINCIPAL
+            doc.setFontSize(28);
+            doc.setTextColor(102, 126, 234);
+            doc.text('GABARITO', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            
+            // LINHA
+            doc.line(20, 40, 190, 40);
+            
+            // CAMPOS PARA O ALUNO PREENCHER
+            doc.setFontSize(12);
+            doc.text('NOME DO ALUNO: _________________________________________', 20, 55);
+            doc.text('DATA: _____/_____/______', 20, 70);
+            doc.text('ANO/TURMA: _________________________', 20, 85);
+            
+            // INFORMAÇÕES DA PROVA
+            doc.setFontSize(10);
+            doc.setTextColor(100, 100, 100);
+            doc.text(`Título: ${titulo}`, 20, 100);
+            doc.text(`Total de questões: ${numQuestoes}`, 20, 108);
+            
+            doc.line(20, 116, 190, 116);
+            
+            // TABELA DE QUESTÕES COM COLUNAS DAS ALTERNATIVAS
+            let y = 130;
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            
+            // Calcular largura das colunas
+            const colLargura = 170 / (alternativas.length + 1);
+            
+            // Cabeçalho da tabela
+            doc.setFillColor(102, 126, 234);
+            doc.rect(20, y - 5, 170, 10, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text('Questão', 25, y);
+            
+            // Desenhar cabeçalho das alternativas
+            let xInicial = 25 + colLargura;
+            for (let i = 0; i < alternativas.length; i++) {
+                doc.text(alternativas[i], xInicial + (colLargura / 2) - 3, y);
+                xInicial += colLargura;
+            }
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFont('helvetica', 'normal');
+            y += 12;
+            
+            // Gerar linhas da tabela com bolinhas para PINTAR
+            for (let i = 0; i < numQuestoes; i++) {
+                if (y > 270) {
+                    doc.addPage();
+                    y = 20;
+                    
+                    // Recriar cabeçalho na nova página
+                    doc.setFillColor(102, 126, 234);
+                    doc.rect(20, y - 5, 170, 10, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.text('Questão', 25, y);
+                    
+                    xInicial = 25 + colLargura;
+                    for (let j = 0; j < alternativas.length; j++) {
+                        doc.text(alternativas[j], xInicial + (colLargura / 2) - 3, y);
+                        xInicial += colLargura;
+                    }
+                    
+                    doc.setTextColor(0, 0, 0);
+                    y += 12;
+                }
+                
+                // Alternar cores de linha
+                if (i % 2 === 0) {
+                    doc.setFillColor(245, 245, 245);
+                    doc.rect(20, y - 4, 170, 12, 'F');
+                }
+                
+                // Número da questão
+                doc.setFont('helvetica', 'bold');
+                doc.text(`${i + 1}`, 25, y + 2);
+                doc.setFont('helvetica', 'normal');
+                
+                // Desenhar bolinhas para PINTAR
+                xInicial = 25 + colLargura;
+                for (let j = 0; j < alternativas.length; j++) {
+                    const centroX = xInicial + (colLargura / 2);
+                    // Desenhar círculo maior para facilitar pintura
+                    doc.setDrawColor(0, 0, 0);
+                    doc.setFillColor(255, 255, 255);
+                    doc.circle(centroX, y + 1, 4, 'FD');
+                    xInicial += colLargura;
+                }
+                
+                y += 14;
+            }
+            
+            // Rodapé com instruções
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(9);
+                doc.setTextColor(150, 150, 150);
+                doc.text('Instruções: PINTE COMPLETAMENTE a bolinha da alternativa escolhida', 105, 285, { align: 'center' });
+                doc.setFontSize(8);
+                doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, 105, 292, { align: 'center' });
+            }
+            
+            // Salvar PDF
+            doc.save(`gabarito_para_preencher_${titulo.replace(/\s/g, '_')}.pdf`);
+            
+            // Salvar configurações para usar na correção
+            localStorage.setItem('alternativasGeradas', alternativasStr);
+            localStorage.setItem('numQuestoesGerado', numQuestoes);
+            
+            // Preencher automaticamente os campos na aba de leitura
+            document.getElementById('numQuestoesLeitura').value = numQuestoes;
+            document.getElementById('alternativasLeitura').value = alternativasStr;
+            
+            alert(`✅ PDF gerado com sucesso!\n\nO PDF contém:\n- ${numQuestoes} questões\n- Alternativas: ${alternativas.join(', ')}\n- Bolinhas para PINTAR\n- Espaços para Nome, Data e Turma\n\nOs alunos devem PINTAR a bolinha da alternativa escolhida.`);
+        }
+
+        // Funções da Câmera
+        startBtn.addEventListener('click', async () => {
+            try {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                
+                const constraints = {
+                    video: {
+                        facingMode: isMobile ? 'environment' : 'user',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                };
+
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+                videoContainer.classList.add('active');
+                
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                captureBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Erro ao acessar câmera:', error);
+                alert('Não foi possível acessar a câmera. Verifique as permissões do navegador.');
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+                videoElement.srcObject = null;
+                videoContainer.classList.remove('active');
+                
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                captureBtn.disabled = true;
+            }
+        });
+
+        captureBtn.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            
+            context.save();
+            context.scale(-1, 1);
+            context.drawImage(videoElement, -canvas.width, 0, canvas.width, canvas.height);
+            context.restore();
+            
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                imagemAtual = url;
+                preview.src = url;
+                preview.style.display = 'block';
+                
+                videoContainer.classList.remove('active');
+                captureBtn.disabled = true;
+                retakeBtn.style.display = 'block';
+                
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                }
+                
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }, 'image/jpeg', 0.9);
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            imagemAtual = null;
+            preview.style.display = 'none';
+            retakeBtn.style.display = 'none';
+            videoContainer.classList.add('active');
+            captureBtn.disabled = false;
+            startCameraAgain();
+        });
+
+        async function startCameraAgain() {
+            try {
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                const constraints = {
+                    video: {
+                        facingMode: isMobile ? 'environment' : 'user',
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    }
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = stream;
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } catch (error) {
+                console.error('Erro ao reiniciar câmera:', error);
+                startBtn.disabled = false;
+            }
+        }
+
+        // Processar imagem e corrigir
         async function processarGabarito() {
             if (!imagemAtual) {
-                alert('Por favor, selecione uma imagem primeiro!');
+                alert('Por favor, tire uma foto do gabarito preenchido primeiro!');
                 return;
             }
 
-            const numQuestoes = parseInt(document.getElementById('numQuestoes').value);
-            const alternativasStr = document.getElementById('alternativas').value;
-            let gabaritoStr = document.getElementById('gabarito').value;
+            const numQuestoes = parseInt(document.getElementById('numQuestoesLeitura').value);
+            const alternativasStr = document.getElementById('alternativasLeitura').value;
+            let gabaritoStr = document.getElementById('gabaritoOficial').value;
 
             const alternativas = alternativasStr.split(',').map(a => a.trim().toUpperCase());
 
-            // Se gabarito não foi preenchido, gerar aleatório
             if (!gabaritoStr) {
-                gabaritoStr = gerarGabaritoAleatorio(numQuestoes, alternativas);
-                document.getElementById('gabarito').value = gabaritoStr;
+                alert('Por favor, informe o gabarito oficial com as respostas corretas!');
+                return;
             }
 
             const gabarito = gabaritoStr.split(',').map(a => a.trim().toUpperCase());
@@ -360,28 +708,30 @@
                 return;
             }
 
-            // Mostrar loading
             document.getElementById('loading').style.display = 'block';
             document.getElementById('results').style.display = 'none';
+            document.getElementById('resultContent').innerHTML = '';
 
             try {
-                // Processar imagem com Tesseract.js
+                const response = await fetch(imagemAtual);
+                const blob = await response.blob();
+
                 const { data: { text } } = await Tesseract.recognize(
-                    imagemAtual,
+                    blob,
                     'por',
                     {
                         logger: m => console.log(m)
                     }
                 );
 
-                // Extrair respostas do texto
                 const respostasAluno = extrairRespostas(text, numQuestoes, alternativas);
-                
-                // Corrigir prova
                 const resultado = corrigirProva(respostasAluno, gabarito);
+                exibirResultados(resultado);
                 
-                // Exibir resultados
-                exibirResultados(resultado, respostasAluno, gabarito);
+                // Mudar para aba de resultados
+                setTimeout(() => {
+                    document.querySelectorAll('.tab-btn')[2].click();
+                }, 500);
                 
             } catch (error) {
                 console.error('Erro:', error);
@@ -392,10 +742,7 @@
         }
 
         function extrairRespostas(texto, numQuestoes, alternativas) {
-            // Limpar texto
             texto = texto.toUpperCase();
-            
-            // Procurar padrões como "1A", "2B", "01C", etc.
             const respostas = [];
             const padrao = /(\d+)\s*([A-E])/g;
             let match;
@@ -409,7 +756,6 @@
                 }
             }
 
-            // Preencher array de respostas
             for (let i = 1; i <= numQuestoes; i++) {
                 respostas.push(encontrados[i] || null);
             }
@@ -430,9 +776,9 @@
                 
                 detalhes.push({
                     questao: i + 1,
-                    respostaAluno: aluno || 'Não respondida',
+                    respostaAluno: aluno || '❌ Não respondida',
                     respostaCorreta: correto,
-                    status: acertou ? 'Correta' : (aluno ? 'Incorreta' : 'Não respondida'),
+                    status: acertou ? '✓ Correta' : (aluno ? '✗ Incorreta' : '❌ Não respondida'),
                     acertou: acertou
                 });
             }
@@ -447,65 +793,61 @@
             };
         }
 
-        function exibirResultados(resultado, respostasAluno, gabarito) {
+        function exibirResultados(resultado) {
             const resultContent = document.getElementById('resultContent');
             
             let html = `
                 <div class="score-card">
-                    <h3>Nota Final</h3>
+                    <h3>🎯 Resultado Final</h3>
                     <div class="score">${resultado.nota}%</div>
                     <p>${resultado.acertos} acertos de ${resultado.totalQuestoes} questões</p>
                 </div>
                 
-                <table class="questions-table">
-                    <thead>
-                        <tr>
-                            <th>Questão</th>
-                            <th>Sua Resposta</th>
-                            <th>Gabarito</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+                <div style="overflow-x: auto;">
+                    <table class="questions-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Resposta do Aluno</th>
+                                <th>Gabarito</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
             `;
 
             for (const detalhe of resultado.detalhes) {
                 const statusClass = detalhe.acertou ? 'correct' : 'incorrect';
-                const statusIcon = detalhe.acertou ? '✓' : '✗';
                 html += `
                     <tr>
                         <td>${detalhe.questao}</td>
-                        <td>${detalhe.respostaAluno}</td>
+                        <td><strong>${detalhe.respostaAluno}</strong></td>
                         <td>${detalhe.respostaCorreta}</td>
-                        <td class="${statusClass}">${statusIcon} ${detalhe.status}</td>
+                        <td class="${statusClass}">${detalhe.status}</td>
                     </tr>
                 `;
             }
 
             html += `
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
                 
                 <div class="export-buttons">
-                    <button onclick="exportarExcel()">📊 Exportar para Excel</button>
-                    <button onclick="window.print()">🖨️ Imprimir Relatório</button>
+                    <button onclick="exportarExcel()">📊 Exportar Excel</button>
+                    <button onclick="window.print()">🖨️ Imprimir</button>
                 </div>
             `;
 
             resultContent.innerHTML = html;
             document.getElementById('results').style.display = 'block';
-            
-            // Salvar resultado para exportação
             window.resultadoAtual = resultado;
         }
 
-        function gerarGabaritoAleatorio(numQuestoes, alternativas) {
-            const gabarito = [];
-            for (let i = 0; i < numQuestoes; i++) {
-                const randomIndex = Math.floor(Math.random() * alternativas.length);
-                gabarito.push(alternativas[randomIndex]);
+        function exibirResultadosSalvos() {
+            if (window.resultadoAtual) {
+                exibirResultados(window.resultadoAtual);
             }
-            return gabarito.join(',');
         }
 
         function exportarExcel() {
@@ -513,35 +855,30 @@
             
             const dados = window.resultadoAtual.detalhes.map(d => ({
                 'Questão': d.questao,
-                'Sua Resposta': d.respostaAluno,
+                'Resposta do Aluno': d.respostaAluno.replace(/[❌✓✗]/g, '').trim(),
                 'Resposta Correta': d.respostaCorreta,
-                'Status': d.status
+                'Status': d.status.replace(/[✓✗❌]/g, '').trim()
             }));
             
-            // Adicionar linha de resumo
             dados.push({
                 'Questão': 'RESUMO',
-                'Sua Resposta': `Total: ${window.resultadoAtual.totalQuestoes}`,
+                'Resposta do Aluno': `Total: ${window.resultadoAtual.totalQuestoes}`,
                 'Resposta Correta': `Acertos: ${window.resultadoAtual.acertos}`,
                 'Status': `Nota: ${window.resultadoAtual.nota}%`
             });
             
             const ws = XLSX.utils.json_to_sheet(dados);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Resultado Gabarito');
-            XLSX.writeFile(wb, `gabarito_${new Date().toISOString().slice(0,19)}.xlsx`);
+            XLSX.utils.book_append_sheet(wb, ws, 'Resultado Prova');
+            XLSX.writeFile(wb, `resultado_prova_${new Date().toISOString().slice(0,19)}.xlsx`);
         }
 
-        // Preencher exemplo de gabarito
-        function preencherExemplo() {
-            const numQuestoes = 10;
-            const alternativas = ['A', 'B', 'C', 'D', 'E'];
-            const exemplo = gerarGabaritoAleatorio(numQuestoes, alternativas);
-            document.getElementById('gabarito').value = exemplo;
-        }
-
-        // Inicializar com exemplo
-        preencherExemplo();
+        // Limpar recursos ao sair
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
     </script>
 </body>
 </html>
