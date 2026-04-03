@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Corretor de Provas - Bolinhas</title>
+    <title>Corretor de Provas - Bolinhas com Indicadores Visuais</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,7 +15,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             background: white;
             border-radius: 32px;
@@ -78,6 +78,10 @@
         .btn-secondary {
             background: #475569;
         }
+        .btn-warning {
+            background: #eab308;
+            color: #1e293b;
+        }
         .two-columns {
             display: flex;
             flex-wrap: wrap;
@@ -86,7 +90,7 @@
         }
         .column {
             flex: 1;
-            min-width: 280px;
+            min-width: 300px;
         }
         .card {
             background: #f8fafc;
@@ -110,6 +114,17 @@
             border: 2px solid #cbd5e1;
             max-height: 320px;
             object-fit: contain;
+        }
+        .canvas-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        #resultCanvas {
+            width: 100%;
+            border-radius: 20px;
+            border: 2px solid #cbd5e1;
+            background: #0f172a;
         }
         .gabarito-grid {
             background: white;
@@ -157,37 +172,17 @@
             margin-top: 20px;
         }
         @media print {
-            body {
-                background: white;
-                padding: 0;
-                margin: 0;
-            }
-            .container {
-                padding: 0;
-                box-shadow: none;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .print-area {
-                margin: 0;
-                padding: 0.5cm;
-            }
-            .bolinha-print {
-                width: 24px !important;
-                height: 24px !important;
-                border-radius: 50% !important;
-                border: 2px solid black !important;
-                display: inline-block !important;
-                background: white !important;
-            }
+            body { background: white; padding: 0; margin: 0; }
+            .container { padding: 0; box-shadow: none; }
+            .no-print { display: none !important; }
+            .print-area { margin: 0; padding: 0.5cm; }
         }
     </style>
     <script async src="https://docs.opencv.org/4.8.0/opencv.js"></script>
 </head>
 <body>
-<div class="container" id="app">
-    <h1>📋 Corretor de Cartões com Bolinhas</h1>
+<div class="container">
+    <h1>📋 Corretor Inteligente com Pontos Verdes</h1>
 
     <!-- Painel de configuração -->
     <div class="config-panel no-print">
@@ -200,13 +195,11 @@
             <input type="number" id="numQuestoes" min="1" max="30" value="10" style="width: 80px;">
         </div>
         <div class="config-item">
-            <label>🔤 Alternativas por questão</label>
+            <label>🔤 Alternativas</label>
             <select id="numAlternativas">
-                <option value="2">2 (A, B)</option>
-                <option value="3">3 (A, B, C)</option>
-                <option value="4">4 (A, B, C, D)</option>
-                <option value="5" selected>5 (A, B, C, D, E)</option>
-                <option value="6">6 (A, B, C, D, E, F)</option>
+                <option value="2">2 (A,B)</option><option value="3">3 (A,B,C)</option>
+                <option value="4">4 (A,B,C,D)</option><option value="5" selected>5 (A,B,C,D,E)</option>
+                <option value="6">6 (A,B,C,D,E,F)</option>
             </select>
         </div>
         <div class="config-item">
@@ -214,10 +207,8 @@
         </div>
     </div>
 
-    <!-- Área de impressão do cartão (dinâmica) -->
-    <div id="printArea" class="print-area" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 25px;">
-        <!-- Conteúdo gerado via JS -->
-    </div>
+    <!-- Área do cartão (para imprimir) -->
+    <div id="printArea" class="print-area" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 25px;"></div>
     <div class="no-print" style="text-align: center; margin-bottom: 20px;">
         <button id="btnImprimirCartao">🖨️ Imprimir cartão</button>
     </div>
@@ -230,13 +221,13 @@
                 <video id="video" autoplay playsinline style="width:100%; border-radius: 20px;"></video>
                 <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
                     <button id="captureBtn">📷 Tirar Foto</button>
-                    <button id="resetCameraBtn" class="btn-secondary">🔄 Reiniciar Câmera</button>
+                    <button id="toggleCameraBtn" class="btn-warning">🔴 Desligar Câmera</button>
                     <label for="fileUpload" style="background:#475569; padding:10px 18px; border-radius:60px; color:white; cursor:pointer;">📁 Enviar Imagem</label>
                     <input type="file" id="fileUpload" accept="image/jpeg,image/png" style="display:none;">
                 </div>
                 <canvas id="canvas" style="display:none;"></canvas>
-                <div id="previewArea" style="margin-top: 15px; display: none;">
-                    <img id="capturedImage" style="width:100%; border-radius: 20px; border:1px solid #ccc;">
+                <div id="previewArea" style="margin-top: 15px;">
+                    <canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas>
                 </div>
             </div>
         </div>
@@ -256,28 +247,28 @@
     </div>
 
     <div class="log no-print" id="logArea">
-        📌 Configurações atuais. Clique em "Aplicar e gerar cartão" para atualizar.<br>
-        ⚡ Após tirar a foto, clique em "CORRIGIR PROVA". Aguarde o OpenCV.
+        📌 Configure o gabarito, tire uma foto e clique em CORRIGIR. Os acertos aparecerão como pontos verdes limão na imagem.
     </div>
 </div>
 
 <script>
     // ----------------------------- ESTADO GLOBAL -----------------------------
-    let currentImageData = null;
-    let gabarito = {};           // {1: "A", 2: "B", ...}
+    let currentImageData = null;       // imagem original base64
+    let gabarito = {};                 // {1: "A", 2: "B", ...}
     let numQuestoes = 10;
     let numAlternativas = 5;
     let letras = ['A','B','C','D','E','F'];
     let cvReady = false;
+    let cameraActive = true;
+    let stream = null;
 
     // Elementos DOM
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const captureBtn = document.getElementById('captureBtn');
-    const resetCameraBtn = document.getElementById('resetCameraBtn');
+    const toggleCameraBtn = document.getElementById('toggleCameraBtn');
     const fileUpload = document.getElementById('fileUpload');
-    const previewArea = document.getElementById('previewArea');
-    const capturedImage = document.getElementById('capturedImage');
+    const resultCanvas = document.getElementById('resultCanvas');
     const corrigirBtn = document.getElementById('corrigirBtn');
     const resultArea = document.getElementById('resultArea');
     const scoreDisplay = document.getElementById('scoreDisplay');
@@ -290,8 +281,6 @@
     const numQuestoesInput = document.getElementById('numQuestoes');
     const numAlternativasSelect = document.getElementById('numAlternativas');
 
-    let stream = null;
-
     // OpenCV inicialização
     function onOpenCvReady() {
         cvReady = true;
@@ -303,35 +292,72 @@
         setTimeout(() => { if (typeof cv !== 'undefined') cv['onRuntimeInitialized'] = onOpenCvReady; }, 1000);
     }
 
-    // ----------------------------- CÂMERA -----------------------------
+    // ----------------------------- CÂMERA (Ligar/Desligar) -----------------------------
     async function iniciarCamera() {
-        if (stream) stream.getTracks().forEach(t => t.stop());
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
             video.srcObject = stream;
             await video.play();
-            logArea.innerHTML += "\n📷 Câmera ativada.";
+            cameraActive = true;
+            toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+            logArea.innerHTML += "\n📷 Câmera ligada.";
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
                 await video.play();
+                cameraActive = true;
+                toggleCameraBtn.textContent = "🔴 Desligar Câmera";
             } catch (e) {
                 logArea.innerHTML += "\n❌ Erro ao acessar câmera.";
+                cameraActive = false;
+                toggleCameraBtn.textContent = "🟢 Ligar Câmera";
             }
         }
     }
 
+    function desligarCamera() {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+            video.srcObject = null;
+        }
+        cameraActive = false;
+        toggleCameraBtn.textContent = "🟢 Ligar Câmera";
+        logArea.innerHTML += "\n📴 Câmera desligada.";
+    }
+
+    function toggleCamera() {
+        if (cameraActive) {
+            desligarCamera();
+        } else {
+            iniciarCamera();
+        }
+    }
+
     function capturarFoto() {
-        if (!video.videoWidth) { logArea.innerHTML += "\n⚠️ Câmera não pronta."; return; }
+        if (!video.videoWidth || !cameraActive) {
+            logArea.innerHTML += "\n⚠️ Câmera não está ativa ou não pronta. Ligue a câmera primeiro.";
+            return;
+        }
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
         currentImageData = canvas.toDataURL('image/jpeg', 0.9);
-        capturedImage.src = currentImageData;
-        previewArea.style.display = 'block';
-        logArea.innerHTML += "\n📸 Foto capturada. Clique em CORRIGIR.";
-        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null; }
+        // Exibir a imagem original no canvas de resultado
+        const img = new Image();
+        img.onload = () => {
+            resultCanvas.width = img.width;
+            resultCanvas.height = img.height;
+            const ctx = resultCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+        };
+        img.src = currentImageData;
+        logArea.innerHTML += "\n📸 Foto capturada. Agora defina o gabarito e clique em CORRIGIR.";
     }
 
     function carregarUpload(file) {
@@ -339,65 +365,54 @@
         const reader = new FileReader();
         reader.onload = (e) => {
             currentImageData = e.target.result;
-            capturedImage.src = currentImageData;
-            previewArea.style.display = 'block';
+            const img = new Image();
+            img.onload = () => {
+                resultCanvas.width = img.width;
+                resultCanvas.height = img.height;
+                const ctx = resultCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = currentImageData;
             logArea.innerHTML += "\n📁 Imagem carregada.";
-            if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+            if (stream && cameraActive) desligarCamera();
         };
         reader.readAsDataURL(file);
     }
 
-    // ----------------------------- GERAR CARTÃO (HTML para imprimir) -----------------------------
+    // ----------------------------- GERAR CARTÃO -----------------------------
     function gerarCartaoHTML(titulo, qtd, altCount) {
         let letrasUsadas = letras.slice(0, altCount);
-        let html = `<div style="font-family: Arial, sans-serif; max-width: 100%; margin: 0 auto;">
+        return `<div style="font-family: Arial, sans-serif;">
             <h2 style="text-align: center;">${titulo}</h2>
-            <p><strong>NOME DO ALUNO:</strong> _________________ &nbsp;&nbsp; <strong>DATA:</strong> ___/___/___ &nbsp;&nbsp; <strong>TURMA:</strong> _______</p>
-            <p><strong>Total de questões:</strong> ${qtd} &nbsp; | &nbsp; <strong>Alternativas:</strong> ${letrasUsadas.join(', ')}</p>
-            <p><em>Instrução: PINTE COMPLETAMENTE a bolinha da alternativa escolhida com caneta AZUL ou PRETA.</em></p>
-            <table style="border-collapse: collapse; width: 100%; margin-top: 20px; border: 1px solid #000;">
-                <thead>
-                    <tr style="background: #eee;">
-                        <th style="border: 1px solid #000; padding: 10px;">Questão</th>
-                        ${letrasUsadas.map(l => `<th style="border: 1px solid #000; padding: 10px;">${l}</th>`).join('')}
-                    </tr>
-                </thead>
-                <tbody>`;
-        for (let i = 1; i <= qtd; i++) {
-            html += `<tr>
-                        <td style="border: 1px solid #000; text-align: center; padding: 12px;">${i}</td>
-                        ${letrasUsadas.map(() => `<td style="border: 1px solid #000; text-align: center;"><span class="bolinha-print" style="display: inline-block; width: 28px; height: 28px; border-radius: 50%; border: 2px solid black; background: white;"></span></td>`).join('')}
-                     </tr>`;
-        }
-        html += `</tbody></table>
-            <p style="margin-top: 30px; font-size: 12px; text-align: center;">Sistema de correção automática - fotografe esta folha preenchida.</p>
+            <p><strong>NOME:</strong> _________________ &nbsp; <strong>DATA:</strong> ___/___/___ &nbsp; <strong>TURMA:</strong> _______</p>
+            <p><strong>Total questões:</strong> ${qtd} &nbsp; | &nbsp; <strong>Alternativas:</strong> ${letrasUsadas.join(', ')}</p>
+            <p><em>Instrução: PINTE COMPLETAMENTE a bolinha da alternativa com caneta AZUL ou PRETA.</em></p>
+            <table style="border-collapse: collapse; width: 100%; border: 1px solid #000;">
+                <thead><tr style="background:#eee;"><th style="border:1px solid #000; padding:10px;">Questão</th>${letrasUsadas.map(l => `<th style="border:1px solid #000; padding:10px;">${l}</th>`).join('')}</tr></thead>
+                <tbody>${Array.from({length: qtd}, (_,i) => `<tr><td style="border:1px solid #000; text-align:center; padding:12px;">${i+1}</td>${letrasUsadas.map(() => `<td style="border:1px solid #000; text-align:center;"><span class="bolinha-print" style="display:inline-block; width:28px; height:28px; border-radius:50%; border:2px solid black; background:white;"></span></td>`).join('')}</tr>`).join('')}</tbody>
+            </table>
+            <p style="font-size:12px; text-align:center;">Sistema de correção automática - fotografe esta folha preenchida.</p>
         </div>`;
-        return html;
     }
 
     function atualizarCartao() {
-        let titulo = tituloProvaInput.value.trim();
-        if (titulo === "") titulo = "Avaliação";
+        let titulo = tituloProvaInput.value.trim() || "Avaliação";
         numQuestoes = parseInt(numQuestoesInput.value, 10);
         numAlternativas = parseInt(numAlternativasSelect.value, 10);
         if (isNaN(numQuestoes)) numQuestoes = 10;
-        if (numQuestoes < 1) numQuestoes = 1;
-        if (numQuestoes > 30) numQuestoes = 30;
+        numQuestoes = Math.min(30, Math.max(1, numQuestoes));
         letras = ['A','B','C','D','E','F'];
-        const htmlCartao = gerarCartaoHTML(titulo, numQuestoes, numAlternativas);
-        document.getElementById('printArea').innerHTML = htmlCartao;
-        // Regerar interface do gabarito também
+        document.getElementById('printArea').innerHTML = gerarCartaoHTML(titulo, numQuestoes, numAlternativas);
         gerarInterfaceGabarito();
     }
 
-    // ----------------------------- INTERFACE DO GABARITO (dinâmico) -----------------------------
+    // ----------------------------- GABARITO -----------------------------
     function gerarInterfaceGabarito() {
         const container = document.getElementById('gabaritoDinamico');
         container.innerHTML = '';
         const table = document.createElement('table');
         table.className = 'gabarito-table';
         let letrasUsadas = letras.slice(0, numAlternativas);
-        // cabeçalho
         let thead = table.createTHead();
         let headerRow = thead.insertRow();
         headerRow.insertCell().innerText = 'Questão';
@@ -405,8 +420,7 @@
         let tbody = table.createTBody();
         for (let i = 1; i <= numQuestoes; i++) {
             let row = tbody.insertRow();
-            let cellQ = row.insertCell();
-            cellQ.innerText = i;
+            row.insertCell().innerText = i;
             for (let alt of letrasUsadas) {
                 let cell = row.insertCell();
                 let select = document.createElement('select');
@@ -414,6 +428,8 @@
                 select.addEventListener('change', (e) => {
                     if (e.target.value) gabarito[i] = e.target.value;
                     else delete gabarito[i];
+                    // Persistir visualmente
+                    logArea.innerHTML += `\n✅ Gabarito Q${i} = ${gabarito[i] || 'não definido'}`;
                 });
                 cell.appendChild(select);
             }
@@ -430,29 +446,23 @@
         logArea.innerHTML += "\n🔄 Gabarito exemplo carregado (primeira alternativa cíclica).";
     }
 
-    // ----------------------------- DETECÇÃO DAS BOLINHAS PINTADAS (OPENCV) -----------------------------
-    async function detectarRespostasDaImagem(imageBase64) {
+    // ----------------------------- DETECÇÃO E DESENHO DOS PONTOS VERDES -----------------------------
+    async function detectarRespostasComPontos(imageBase64) {
         return new Promise((resolve, reject) => {
-            if (!cvReady) {
-                reject("OpenCV não carregou ainda.");
-                return;
-            }
+            if (!cvReady) reject("OpenCV não carregou.");
             let img = new Image();
             img.onload = () => {
                 try {
                     let src = cv.imread(img);
                     let gray = new cv.Mat();
                     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-                    
-                    // Detectar círculos com HoughCircles
                     let circles = new cv.Mat();
                     cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, 30, 100, 30, 8, 25);
                     if (circles.cols === 0) {
                         src.delete(); gray.delete(); circles.delete();
-                        reject("Nenhum círculo detectado. Ajuste iluminação ou contraste.");
+                        reject("Nenhum círculo detectado.");
                         return;
                     }
-                    
                     let circleData = [];
                     for (let i = 0; i < circles.cols; i++) {
                         let x = circles.data32F[i*3];
@@ -460,7 +470,6 @@
                         let r = circles.data32F[i*3+2];
                         circleData.push({ x, y, r });
                     }
-                    // Ordenar por Y e agrupar em linhas
                     circleData.sort((a,b) => a.y - b.y);
                     let rows = [];
                     let thresholdY = 25;
@@ -476,44 +485,40 @@
                         }
                         if (!added) rows.push({ avgY: c.y, circles: [c] });
                     }
-                    // Ordenar cada linha por X
                     for (let row of rows) row.circles.sort((a,b) => a.x - b.x);
-                    
-                    // Esperamos encontrar aproximadamente 'numQuestoes' linhas
                     if (rows.length < numQuestoes - 2 || rows.length > numQuestoes + 2) {
                         src.delete(); gray.delete(); circles.delete();
-                        reject(`Detectadas ${rows.length} linhas de círculos, esperado ~${numQuestoes}. Tente foto mais reta.`);
+                        reject(`Detectadas ${rows.length} linhas, esperado ~${numQuestoes}.`);
                         return;
                     }
                     let questoesLinhas = rows.slice(0, numQuestoes);
-                    let respostas = {};
+                    let respostas = {};      // {questao: alternativa}
+                    let circlesPositions = {}; // {questao: {altIndex: {x,y,r}}}
                     for (let idx = 0; idx < questoesLinhas.length; idx++) {
                         let row = questoesLinhas[idx];
                         let circlesRow = row.circles.slice(0, numAlternativas);
                         if (circlesRow.length < numAlternativas) continue;
-                        let melhorAlt = null;
-                        let menorIntensidade = 255;
+                        circlesPositions[idx+1] = {};
                         for (let j = 0; j < circlesRow.length; j++) {
                             let circ = circlesRow[j];
+                            circlesPositions[idx+1][letras[j]] = { x: circ.x, y: circ.y, r: circ.r };
                             let mask = new cv.Mat.zeros(gray.rows, gray.cols, cv.CV_8UC1);
                             cv.circle(mask, new cv.Point(circ.x, circ.y), circ.r-3, new cv.Scalar(255), -1);
                             let mean = new cv.Mat();
                             cv.mean(gray, mask, mean);
                             let intensidade = mean.data64F[0];
                             mask.delete(); mean.delete();
-                            if (intensidade < 110) { // escuro = pintado
-                                if (intensidade < menorIntensidade) {
-                                    menorIntensidade = intensidade;
-                                    melhorAlt = letras.slice(0, numAlternativas)[j];
+                            if (intensidade < 110) { // pintado
+                                if (!respostas[idx+1] || intensidade < (respostas[idx+1].intens || 255)) {
+                                    respostas[idx+1] = { alt: letras[j], intens: intensidade };
                                 }
                             }
                         }
-                        if (melhorAlt) respostas[idx+1] = melhorAlt;
                     }
                     src.delete(); gray.delete(); circles.delete();
-                    resolve(respostas);
+                    resolve({ respostas: Object.fromEntries(Object.entries(respostas).map(([k,v]) => [k, v.alt])), circlesPositions });
                 } catch (err) {
-                    reject("Erro no processamento: " + err.message);
+                    reject(err.message);
                 }
             };
             img.src = imageBase64;
@@ -522,48 +527,74 @@
 
     async function executarCorrecao() {
         if (!currentImageData) {
-            logArea.innerHTML += "\n⚠️ Nenhuma imagem capturada.";
+            logArea.innerHTML += "\n⚠️ Nenhuma imagem capturada. Tire uma foto primeiro.";
             return;
         }
-        if (Object.keys(gabarito).length === 0) {
-            logArea.innerHTML += "\n⚠️ Defina o gabarito antes.";
+        // Verificar se o gabarito está preenchido para pelo menos 1 questão
+        let temGabarito = Object.keys(gabarito).some(k => gabarito[k] && gabarito[k] !== "");
+        if (!temGabarito) {
+            logArea.innerHTML += "\n⚠️ Defina o gabarito oficial antes de corrigir (selecione as alternativas corretas na tabela à direita).";
             return;
         }
         if (!cvReady) {
-            logArea.innerHTML += "\n⏳ OpenCV carregando, tente novamente.";
+            logArea.innerHTML += "\n⏳ OpenCV carregando, aguarde...";
             return;
         }
-        logArea.innerHTML += "\n🔍 Processando imagem...";
+        logArea.innerHTML += "\n🔍 Processando imagem e detectando bolinhas pintadas...";
         try {
-            let respostasAluno = await detectarRespostasDaImagem(currentImageData);
+            const { respostas: respostasAluno, circlesPositions } = await detectarRespostasComPontos(currentImageData);
             logArea.innerHTML += `\n📝 Respostas detectadas: ${JSON.stringify(respostasAluno)}`;
-            let acertos = 0;
-            let detalhes = [];
-            for (let i=1; i<=numQuestoes; i++) {
-                let correta = gabarito[i];
-                let aluno = respostasAluno[i];
-                if (correta && aluno && correta === aluno) {
-                    acertos++;
-                    detalhes.push(`✅ Q${i}: ${aluno}`);
-                } else if (correta && aluno) {
-                    detalhes.push(`❌ Q${i}: ${aluno} (gabarito ${correta})`);
-                } else if (correta && !aluno) {
-                    detalhes.push(`⚠️ Q${i}: não detectado (gabarito ${correta})`);
+            
+            // Desenhar a imagem original no canvas
+            let img = new Image();
+            img.onload = () => {
+                resultCanvas.width = img.width;
+                resultCanvas.height = img.height;
+                let ctx = resultCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                let acertos = 0;
+                let detalhes = [];
+                // Para cada questão, verificar se a resposta detectada corresponde ao gabarito
+                for (let i = 1; i <= numQuestoes; i++) {
+                    let correta = gabarito[i];
+                    let aluno = respostasAluno[i];
+                    if (correta && aluno && correta === aluno) {
+                        acertos++;
+                        detalhes.push(`✅ Q${i}: ${aluno}`);
+                        // Desenhar ponto verde limão na posição da bolinha correta
+                        if (circlesPositions[i] && circlesPositions[i][aluno]) {
+                            let pos = circlesPositions[i][aluno];
+                            ctx.beginPath();
+                            ctx.arc(pos.x, pos.y, pos.r + 4, 0, 2 * Math.PI);
+                            ctx.fillStyle = '#adff2f'; // verde limão
+                            ctx.fill();
+                            ctx.strokeStyle = '#006400';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
+                    } else if (correta && aluno) {
+                        detalhes.push(`❌ Q${i}: ${aluno} (gabarito ${correta})`);
+                    } else if (correta && !aluno) {
+                        detalhes.push(`⚠️ Q${i}: não detectado (gabarito ${correta})`);
+                    }
                 }
-            }
-            let nota = (acertos / numQuestoes) * 10;
-            scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
-            gradeDetail.innerText = `🎓 NOTA: ${nota.toFixed(1)}  (${acertos} acerto${acertos!==1?'s':''})`;
-            resultArea.style.display = 'block';
-            logArea.innerHTML += `\n📊 CORREÇÃO:\n${detalhes.join('\n')}`;
+                let nota = (acertos / numQuestoes) * 10;
+                scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
+                gradeDetail.innerText = `🎓 NOTA: ${nota.toFixed(1)}  (${acertos} acerto${acertos!==1?'s':''})`;
+                resultArea.style.display = 'block';
+                logArea.innerHTML += `\n📊 CORREÇÃO:\n${detalhes.join('\n')}`;
+                logArea.innerHTML += `\n🎉 Total de pontos verdes (acertos): ${acertos}`;
+            };
+            img.src = currentImageData;
         } catch (err) {
-            logArea.innerHTML += `\n❌ ${err}`;
+            logArea.innerHTML += `\n❌ Erro: ${err}`;
         }
     }
 
-    // ----------------------------- EVENTOS E INICIALIZAÇÃO -----------------------------
+    // ----------------------------- EVENTOS -----------------------------
     captureBtn.addEventListener('click', capturarFoto);
-    resetCameraBtn.addEventListener('click', () => { iniciarCamera(); previewArea.style.display = 'none'; currentImageData = null; });
+    toggleCameraBtn.addEventListener('click', toggleCamera);
     fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
     corrigirBtn.addEventListener('click', executarCorrecao);
     resetGabaritoBtn.addEventListener('click', restaurarGabaritoExemplo);
