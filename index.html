@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Corretor Profissional - Marcadores Pretos (Impressão Garantida)</title>
+    <title>Corretor com Marcadores Amarelos e Retângulo Verde</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #eef2f5; margin: 0; padding: 20px; }
@@ -35,40 +35,22 @@
         .log { background: #1e293b; color: #cbd5e6; border-radius: 20px; padding: 14px; font-family: monospace; font-size: 0.8rem; max-height: 250px; overflow-y: auto; margin-top: 20px; }
         .btn-export { background: #8b5cf6; margin-left: 10px; }
         .btn-export:hover { background: #7c3aed; }
-        .questao-faltando { background: #fee2e2; color: #dc2626; font-size: 0.7rem; padding: 2px 6px; border-radius: 12px; margin-left: 8px; }
         .stats { display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1; }
         .stat-item { text-align: center; }
         .stat-value { font-size: 1.5rem; font-weight: bold; color: #1e40af; }
         .stat-label { font-size: 0.75rem; color: #475569; }
-
-        /* ========== FORÇA A IMPRESSÃO DOS MARCADORES PRETOS ========== */
         @media print {
-            body {
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color-adjust: exact !important;
-            }
-            .marcador {
-                background: #000000 !important;
-                border: 1px solid #000000 !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .print-area {
-                margin: 0;
-                padding: 0.5cm;
-            }
+            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .marcador { background: #000000 !important; border: 1px solid #000000 !important; }
+            .no-print { display: none !important; }
+            .print-area { margin: 0; padding: 0.5cm; }
         }
     </style>
     <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha OpenCV'); document.getElementById('logArea').innerHTML += '❌ ERRO: OpenCV não carregou.'"></script>
 </head>
 <body>
 <div class="container">
-    <h1>📋 Corretor Profissional (Marcadores Pretos - Imprimem Certo)</h1>
-
+    <h1>📋 Corretor com Marcadores Amarelos + Retângulo Verde</h1>
     <div class="config-panel no-print">
         <div class="config-item">
             <label>✏️ Título da Prova</label>
@@ -81,25 +63,19 @@
         <div class="config-item">
             <label>🔤 Alternativas</label>
             <select id="numAlternativas">
-                <option value="2">2 (A,B)</option>
-                <option value="3">3 (A,B,C)</option>
-                <option value="4">4 (A,B,C,D)</option>
-                <option value="5" selected>5 (A,B,C,D,E)</option>
+                <option value="2">2 (A,B)</option><option value="3">3 (A,B,C)</option>
+                <option value="4">4 (A,B,C,D)</option><option value="5" selected>5 (A,B,C,D,E)</option>
                 <option value="6">6 (A,B,C,D,E,F)</option>
             </select>
         </div>
-        <div class="config-item">
-            <button id="btnAplicarConfig" class="btn-green">Aplicar e gerar cartão</button>
-        </div>
+        <div class="config-item"><button id="btnAplicarConfig" class="btn-green">Aplicar e gerar cartão</button></div>
     </div>
-
     <div id="printArea" class="print-area" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 25px;"></div>
     <div class="no-print" style="text-align: center; margin-bottom: 20px;">
         <button id="btnImprimirCartao">🖨️ Imprimir cartão</button>
         <button id="btnExportarJSON" class="btn-export">📥 Exportar JSON</button>
         <button id="btnExportarCSV" class="btn-export">📊 Exportar CSV</button>
     </div>
-
     <div class="two-columns no-print">
         <div class="column">
             <div class="card">
@@ -112,17 +88,12 @@
                     <input type="file" id="fileUpload" accept="image/jpeg,image/png" style="display:none;">
                 </div>
                 <canvas id="canvas" style="display:none;"></canvas>
-                <div id="previewArea" style="margin-top: 15px;">
-                    <canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas>
-                </div>
+                <div id="previewArea" style="margin-top: 15px;"><canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas></div>
             </div>
         </div>
         <div class="column">
             <div class="card">
-                <div class="section-title">
-                    ✅ Gabarito Oficial
-                    <span id="gabaritoStatus" style="font-size: 0.7rem;"></span>
-                </div>
+                <div class="section-title">✅ Gabarito Oficial <span id="gabaritoStatus" style="font-size: 0.7rem;"></span></div>
                 <div id="gabaritoDinamico" class="gabarito-grid"></div>
                 <button id="resetGabaritoBtn" class="btn-secondary" style="margin-top: 16px;">Restaurar exemplo (cíclico)</button>
                 <button id="validarGabaritoBtn" class="btn-secondary" style="margin-top: 8px;">✓ Validar preenchimento</button>
@@ -136,231 +107,134 @@
             </div>
         </div>
     </div>
-
-    <div class="log no-print" id="logArea">
-        ⏳ Aguardando OpenCV.js carregar...
-    </div>
+    <div class="log no-print" id="logArea">⏳ Aguardando OpenCV.js carregar...</div>
 </div>
 
 <script>
-    // ----------------------------- ESTADO GLOBAL -----------------------------
-    let currentImageData = null;
-    let numQuestoes = 10;
-    let numAlternativas = 5;
+    let currentImageData = null, numQuestoes = 10, numAlternativas = 5;
     let letras = ['A','B','C','D','E','F','G','H'];
-    let cvReady = false;
-    let cameraActive = true;
-    let stream = null;
-    let ultimaCorrecao = null;
+    let cvReady = false, cameraActive = true, stream = null, ultimaCorrecao = null;
+    const video = document.getElementById('video'), canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('captureBtn'), toggleCameraBtn = document.getElementById('toggleCameraBtn');
+    const fileUpload = document.getElementById('fileUpload'), resultCanvas = document.getElementById('resultCanvas');
+    const corrigirBtn = document.getElementById('corrigirBtn'), resultArea = document.getElementById('resultArea');
+    const scoreDisplay = document.getElementById('scoreDisplay'), gradeDetail = document.getElementById('gradeDetail');
+    const logArea = document.getElementById('logArea'), resetGabaritoBtn = document.getElementById('resetGabaritoBtn');
+    const validarGabaritoBtn = document.getElementById('validarGabaritoBtn'), btnAplicarConfig = document.getElementById('btnAplicarConfig');
+    const btnImprimirCartao = document.getElementById('btnImprimirCartao'), tituloProvaInput = document.getElementById('tituloProva');
+    const numQuestoesInput = document.getElementById('numQuestoes'), numAlternativasSelect = document.getElementById('numAlternativas');
+    const btnExportarJSON = document.getElementById('btnExportarJSON'), btnExportarCSV = document.getElementById('btnExportarCSV');
+    const gabaritoStatus = document.getElementById('gabaritoStatus'), statsArea = document.getElementById('statsArea');
 
-    // Elementos DOM
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const captureBtn = document.getElementById('captureBtn');
-    const toggleCameraBtn = document.getElementById('toggleCameraBtn');
-    const fileUpload = document.getElementById('fileUpload');
-    const resultCanvas = document.getElementById('resultCanvas');
-    const corrigirBtn = document.getElementById('corrigirBtn');
-    const resultArea = document.getElementById('resultArea');
-    const scoreDisplay = document.getElementById('scoreDisplay');
-    const gradeDetail = document.getElementById('gradeDetail');
-    const logArea = document.getElementById('logArea');
-    const resetGabaritoBtn = document.getElementById('resetGabaritoBtn');
-    const validarGabaritoBtn = document.getElementById('validarGabaritoBtn');
-    const btnAplicarConfig = document.getElementById('btnAplicarConfig');
-    const btnImprimirCartao = document.getElementById('btnImprimirCartao');
-    const tituloProvaInput = document.getElementById('tituloProva');
-    const numQuestoesInput = document.getElementById('numQuestoes');
-    const numAlternativasSelect = document.getElementById('numAlternativas');
-    const btnExportarJSON = document.getElementById('btnExportarJSON');
-    const btnExportarCSV = document.getElementById('btnExportarCSV');
-    const gabaritoStatus = document.getElementById('gabaritoStatus');
-    const statsArea = document.getElementById('statsArea');
-
-    // ---------- ESPERA ATIVA PELO OpenCV ----------
     function esperarOpenCV() {
-        if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
-            cvReady = true;
-            logArea.innerHTML = "✅ OpenCV.js carregado! Detecção de marcadores e perspectiva ativa.";
-        } else {
-            logArea.innerHTML = "⏳ Carregando OpenCV... (verificando a cada 500ms)";
-            setTimeout(esperarOpenCV, 500);
-        }
+        if (typeof cv !== 'undefined' && cv.Mat && cv.imread) { cvReady = true; logArea.innerHTML = "✅ OpenCV.js carregado!"; }
+        else { logArea.innerHTML = "⏳ Carregando OpenCV..."; setTimeout(esperarOpenCV, 500); }
     }
     esperarOpenCV();
 
-    // ---------- CÂMERA ----------
     async function iniciarCamera() {
         if (stream) stream.getTracks().forEach(t => t.stop());
         try {
             stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
-            video.srcObject = stream;
-            await video.play();
-            cameraActive = true;
-            toggleCameraBtn.textContent = "🔴 Desligar Câmera";
-            logArea.innerHTML += "\n📷 Câmera iniciada.";
+            video.srcObject = stream; await video.play(); cameraActive = true;
+            toggleCameraBtn.textContent = "🔴 Desligar Câmera"; logArea.innerHTML += "\n📷 Câmera iniciada.";
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                await video.play();
-                cameraActive = true;
-                toggleCameraBtn.textContent = "🔴 Desligar Câmera";
-                logArea.innerHTML += "\n📷 Câmera frontal/dianteira iniciada.";
-            } catch (e) {
-                logArea.innerHTML += "\n❌ Erro na câmera. Use upload de imagem.";
-                cameraActive = false;
-                toggleCameraBtn.textContent = "🟢 Ligar Câmera";
-            }
+                video.srcObject = stream; await video.play(); cameraActive = true;
+                toggleCameraBtn.textContent = "🔴 Desligar Câmera"; logArea.innerHTML += "\n📷 Câmera frontal iniciada.";
+            } catch (e) { logArea.innerHTML += "\n❌ Erro na câmera. Use upload."; cameraActive = false; toggleCameraBtn.textContent = "🟢 Ligar Câmera"; }
         }
     }
-
-    function desligarCamera() {
-        if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null; }
-        cameraActive = false;
-        toggleCameraBtn.textContent = "🟢 Ligar Câmera";
-        logArea.innerHTML += "\n📷 Câmera desligada.";
-    }
-
+    function desligarCamera() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null; } cameraActive = false; toggleCameraBtn.textContent = "🟢 Ligar Câmera"; logArea.innerHTML += "\n📷 Câmera desligada."; }
     function toggleCamera() { cameraActive ? desligarCamera() : iniciarCamera(); }
-
     function capturarFoto() {
-        if (!video.videoWidth || !cameraActive) {
-            logArea.innerHTML += "\n⚠️ Câmera não ativa. Ligue primeiro.";
-            return;
-        }
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        if (!video.videoWidth || !cameraActive) { logArea.innerHTML += "\n⚠️ Câmera não ativa."; return; }
+        canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         canvas.getContext('2d').drawImage(video, 0, 0);
         currentImageData = canvas.toDataURL('image/jpeg', 0.9);
-        const img = new Image();
-        img.onload = () => {
-            resultCanvas.width = img.width;
-            resultCanvas.height = img.height;
-            resultCanvas.getContext('2d').drawImage(img, 0, 0);
-        };
-        img.src = currentImageData;
-        logArea.innerHTML += "\n📸 Foto capturada. Clique em CORRIGIR.";
+        const img = new Image(); img.onload = () => { resultCanvas.width = img.width; resultCanvas.height = img.height; resultCanvas.getContext('2d').drawImage(img, 0, 0); };
+        img.src = currentImageData; logArea.innerHTML += "\n📸 Foto capturada.";
     }
-
     function carregarUpload(file) {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
             currentImageData = e.target.result;
-            const img = new Image();
-            img.onload = () => {
-                resultCanvas.width = img.width;
-                resultCanvas.height = img.height;
-                resultCanvas.getContext('2d').drawImage(img, 0, 0);
-            };
-            img.src = currentImageData;
-            logArea.innerHTML += "\n📁 Imagem carregada.";
+            const img = new Image(); img.onload = () => { resultCanvas.width = img.width; resultCanvas.height = img.height; resultCanvas.getContext('2d').drawImage(img, 0, 0); };
+            img.src = currentImageData; logArea.innerHTML += "\n📁 Imagem carregada.";
             if (stream && cameraActive) desligarCamera();
         };
         reader.readAsDataURL(file);
     }
 
-    // ---------- GERAÇÃO DO CARTÃO COM MARCADORES PRETOS ----------
     function gerarCartaoHTML(titulo, qtd, altCount) {
         let letrasUsadas = letras.slice(0, altCount);
-        return `
-        <div style="position: relative; font-family: Arial, sans-serif; background: white; padding: 20px; border: 1px solid #ccc;">
-            <!-- MARCADORES PRETOS -->
+        return `<div style="position: relative; font-family: Arial, sans-serif; background: white; padding: 20px; border: 1px solid #ccc;">
             <div class="marcador" style="position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; background: #000000; border: 1px solid #000000;"></div>
             <div class="marcador" style="position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; background: #000000; border: 1px solid #000000;"></div>
             <div class="marcador" style="position: absolute; bottom: 10px; left: 10px; width: 22px; height: 22px; background: #000000; border: 1px solid #000000;"></div>
             <div class="marcador" style="position: absolute; bottom: 10px; right: 10px; width: 22px; height: 22px; background: #000000; border: 1px solid #000000;"></div>
-
             <h2 style="text-align: center;">${titulo}</h2>
             <p><strong>NOME:</strong> _________________ &nbsp; <strong>DATA:</strong> ___/___/___ &nbsp; <strong>TURMA:</strong> _______</p>
             <p><strong>Total questões:</strong> ${qtd} &nbsp; | &nbsp; <strong>Alternativas:</strong> ${letrasUsadas.join(', ')}</p>
             <p><em>Instrução: PINTE COMPLETAMENTE a bolinha da alternativa com caneta AZUL ou PRETA.</em></p>
             <table style="border-collapse: collapse; width: 100%; border: 1px solid #000;">
-                <thead><tr style="background:#eee;"><th style="border:1px solid #000; padding:10px;">Questão</th>${letrasUsadas.map(l => `<th style="border:1px solid #000; padding:10px;">${l}</th>`).join('')}</tr></thead>
+                <thead><tr style="background:#eee;"><th style="border:1px solid #000; padding:10px;">Questão</th>${letrasUsadas.map(l => `<th style="border:1px solid #000; padding:10px;">${l}</th>`).join('')} </tr></thead>
                 <tbody>${Array.from({length: qtd}, (_,i) => `<tr><td style="border:1px solid #000; text-align:center; padding:12px;">${i+1}</td>${letrasUsadas.map(() => `<td style="border:1px solid #000; text-align:center;"><span style="display:inline-block; width:28px; height:28px; border-radius:50%; border:2px solid black; background:white;"></span></td>`).join('')}</tr>`).join('')}</tbody>
             </table>
             <p style="font-size:12px; text-align:center;">Sistema de correção automática - mantenha os 4 cantos visíveis na foto.</p>
         </div>`;
     }
-
     function atualizarCartao() {
         let titulo = tituloProvaInput.value.trim() || "Avaliação";
-        numQuestoes = parseInt(numQuestoesInput.value, 10);
-        numAlternativas = parseInt(numAlternativasSelect.value, 10);
+        numQuestoes = parseInt(numQuestoesInput.value, 10); numAlternativas = parseInt(numAlternativasSelect.value, 10);
         if (isNaN(numQuestoes)) numQuestoes = 10;
         numQuestoes = Math.min(30, Math.max(1, numQuestoes));
         document.getElementById('printArea').innerHTML = gerarCartaoHTML(titulo, numQuestoes, numAlternativas);
-        gerarInterfaceGabarito();
-        setTimeout(() => {
-            restaurarGabaritoExemplo();
-        }, 100);
+        gerarInterfaceGabarito(); // cria os selects vazios
+        // NÃO chama restaurarGabaritoExemplo automaticamente
+        atualizarStatusGabarito();
     }
-
     function gerarInterfaceGabarito() {
-        const container = document.getElementById('gabaritoDinamico');
-        container.innerHTML = '';
-        const table = document.createElement('table');
-        table.className = 'gabarito-table';
+        const container = document.getElementById('gabaritoDinamico'); container.innerHTML = '';
+        const table = document.createElement('table'); table.className = 'gabarito-table';
         let letrasUsadas = letras.slice(0, numAlternativas);
-        let thead = table.createTHead();
-        let headerRow = thead.insertRow();
-        headerRow.insertCell().innerText = 'Questão';
+        let thead = table.createTHead(); let headerRow = thead.insertRow(); headerRow.insertCell().innerText = 'Questão';
         for (let l of letrasUsadas) headerRow.insertCell().innerText = l;
         let tbody = table.createTBody();
         for (let i = 1; i <= numQuestoes; i++) {
-            let row = tbody.insertRow();
-            row.insertCell().innerText = i;
+            let row = tbody.insertRow(); row.insertCell().innerText = i;
             for (let alt of letrasUsadas) {
-                let cell = row.insertCell();
-                let select = document.createElement('select');
-                select.innerHTML = `<option value="">-</option>${letrasUsadas.map(a => `<option value="${a}">${a}</option>`).join('')}`;
-                select.addEventListener('change', () => atualizarStatusGabarito());
-                cell.appendChild(select);
+                let cell = row.insertCell(); let select = document.createElement('select');
+                // Opção vazia selecionada por padrão
+                select.innerHTML = `<option value="" selected>-</option>${letrasUsadas.map(a => `<option value="${a}">${a}</option>`).join('')}`;
+                select.addEventListener('change', () => atualizarStatusGabarito()); cell.appendChild(select);
             }
         }
         container.appendChild(table);
         atualizarStatusGabarito();
     }
-
     function atualizarStatusGabarito() {
-        const gabarito = obterGabaritoDaTela();
-        const preenchidas = Object.keys(gabarito).length;
-        const faltam = numQuestoes - preenchidas;
-        
-        if (faltam === 0) {
-            gabaritoStatus.innerHTML = '<span style="color: #10b981;">✓ Todas preenchidas</span>';
-        } else {
-            gabaritoStatus.innerHTML = `<span style="color: #eab308;">⚠️ ${faltam} questão(ões) sem gabarito</span>`;
-        }
+        const gabarito = obterGabaritoDaTela(); const preenchidas = Object.keys(gabarito).length; const faltam = numQuestoes - preenchidas;
+        if (faltam === 0) gabaritoStatus.innerHTML = '<span style="color: #10b981;">✓ Todas preenchidas</span>';
+        else gabaritoStatus.innerHTML = `<span style="color: #eab308;">⚠️ ${faltam} questão(ões) sem gabarito</span>`;
     }
-
-    // ✅ FUNÇÃO CORRIGIDA - Obtém gabarito por linha (UMA resposta por questão)
     function obterGabaritoDaTela() {
         let gabarito = {};
         const linhas = document.querySelectorAll('#gabaritoDinamico table tbody tr');
-        
         for (let i = 0; i < linhas.length; i++) {
             const selects = linhas[i].querySelectorAll('select');
             let respostaEncontrada = false;
-            
             for (let select of selects) {
-                const valor = select.value;
-                if (valor && valor !== "") {
-                    gabarito[i + 1] = valor;
-                    respostaEncontrada = true;
-                    break; // ✅ Garante apenas UMA resposta por questão
-                }
+                let valor = select.value.trim();
+                if (valor && valor !== "") { gabarito[i+1] = valor; respostaEncontrada = true; break; }
             }
-            
-            if (!respostaEncontrada) {
-                console.warn(`Questão ${i + 1} sem gabarito definido`);
-            }
+            if (!respostaEncontrada) console.warn(`Questão ${i+1} sem gabarito`);
         }
-        
         return gabarito;
     }
-
+    // Função para restaurar exemplo cíclico (opcional)
     function restaurarGabaritoExemplo() {
         let letrasUsadas = letras.slice(0, numAlternativas);
         const selects = document.querySelectorAll('#gabaritoDinamico select');
@@ -371,129 +245,60 @@
         atualizarStatusGabarito();
         logArea.innerHTML += "\n🔄 Gabarito exemplo cíclico carregado.";
     }
-
     function validarPreenchimentoGabarito() {
-        const gabarito = obterGabaritoDaTela();
-        const questoesFaltando = [];
-        
-        for (let i = 1; i <= numQuestoes; i++) {
-            if (!gabarito[i]) questoesFaltando.push(i);
-        }
-        
-        if (questoesFaltando.length > 0) {
-            alert(`⚠️ Questões sem gabarito definido: ${questoesFaltando.join(', ')}\n\nPreencha todas as alternativas no gabarito à direita.`);
-            logArea.innerHTML += `\n⚠️ Gabarito incompleto! Faltam questões: ${questoesFaltando.join(', ')}`;
-            return false;
-        } else {
-            alert(`✓ Gabarito completo! Todas as ${numQuestoes} questões estão preenchidas.`);
-            logArea.innerHTML += "\n✓ Gabarito validado com sucesso!";
-            return true;
-        }
+        const gabarito = obterGabaritoDaTela(); const faltando = [];
+        for (let i = 1; i <= numQuestoes; i++) if (!gabarito[i]) faltando.push(i);
+        if (faltando.length) alert(`⚠️ Faltam questões: ${faltando.join(', ')}`);
+        else alert(`✓ Gabarito completo!`);
+        return faltando.length === 0;
     }
 
-    // -------------------- FUNÇÕES DE DETECÇÃO DE MARCADORES E PERSPECTIVA --------------------
+    // ----- DETECÇÃO DE MARCADORES (retorna posições) -----
     function encontrarMarcadores(gray) {
-        let thresh = new cv.Mat();
-        cv.threshold(gray, thresh, 200, 255, cv.THRESH_BINARY_INV);
-        
-        let contours = new cv.MatVector();
-        let hierarchy = new cv.Mat();
+        let thresh = new cv.Mat(); cv.threshold(gray, thresh, 200, 255, cv.THRESH_BINARY_INV);
+        let contours = new cv.MatVector(), hierarchy = new cv.Mat();
         cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-        
         let marcadores = [];
         for (let i = 0; i < contours.size(); i++) {
-            let cnt = contours.get(i);
-            let rect = cv.boundingRect(cnt);
-            let area = rect.width * rect.height;
+            let cnt = contours.get(i); let rect = cv.boundingRect(cnt); let area = rect.width * rect.height;
             if (area > 300 && area < 5000) {
                 let ratio = rect.width / rect.height;
-                if (ratio > 0.7 && ratio < 1.3) {
-                    marcadores.push({
-                        x: rect.x,
-                        y: rect.y,
-                        w: rect.width,
-                        h: rect.height,
-                        centerX: rect.x + rect.width/2,
-                        centerY: rect.y + rect.height/2
-                    });
-                }
+                if (ratio > 0.7 && ratio < 1.3) marcadores.push({ x: rect.x, y: rect.y, w: rect.width, h: rect.height, centerX: rect.x + rect.width/2, centerY: rect.y + rect.height/2 });
             }
             cnt.delete();
         }
-        thresh.delete();
-        contours.delete();
-        hierarchy.delete();
-        
+        thresh.delete(); contours.delete(); hierarchy.delete();
         if (marcadores.length >= 4) {
             marcadores.sort((a,b) => a.centerY - b.centerY);
             let top = marcadores.slice(0,2).sort((a,b)=>a.centerX - b.centerX);
             let bottom = marcadores.slice(2,4).sort((a,b)=>a.centerX - b.centerX);
-            if (top.length===2 && bottom.length===2) {
-                return [top[0], top[1], bottom[0], bottom[1]];
-            }
+            if (top.length===2 && bottom.length===2) return [top[0], top[1], bottom[0], bottom[1]];
         }
         return marcadores.slice(0,4);
     }
-
     function aplicarPerspectiva(src, marcadores) {
         if (marcadores.length !== 4) return src.clone();
-        
-        let ptsSrc = cv.matFromArray(4, 1, cv.CV_32FC2, [
-            marcadores[0].centerX, marcadores[0].centerY,
-            marcadores[1].centerX, marcadores[1].centerY,
-            marcadores[2].centerX, marcadores[2].centerY,
-            marcadores[3].centerX, marcadores[3].centerY
-        ]);
-        
-        let width = src.cols;
-        let height = src.rows;
-        let ptsDst = cv.matFromArray(4, 1, cv.CV_32FC2, [
-            0, 0,
-            width, 0,
-            0, height,
-            width, height
-        ]);
-        
-        let M = cv.getPerspectiveTransform(ptsSrc, ptsDst);
-        let dst = new cv.Mat();
+        let ptsSrc = cv.matFromArray(4,1,cv.CV_32FC2, [ marcadores[0].centerX,marcadores[0].centerY, marcadores[1].centerX,marcadores[1].centerY, marcadores[2].centerX,marcadores[2].centerY, marcadores[3].centerX,marcadores[3].centerY ]);
+        let width = src.cols, height = src.rows;
+        let ptsDst = cv.matFromArray(4,1,cv.CV_32FC2, [0,0, width,0, 0,height, width,height]);
+        let M = cv.getPerspectiveTransform(ptsSrc, ptsDst); let dst = new cv.Mat();
         cv.warpPerspective(src, dst, M, new cv.Size(width, height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255,255,255));
-        
-        ptsSrc.delete(); ptsDst.delete(); M.delete();
-        return dst;
+        ptsSrc.delete(); ptsDst.delete(); M.delete(); return dst;
     }
-
-    function equalizarContraste(gray) {
-        let equalized = new cv.Mat();
-        cv.equalizeHist(gray, equalized);
-        return equalized;
-    }
-
+    function equalizarContraste(gray) { let eq = new cv.Mat(); cv.equalizeHist(gray, eq); return eq; }
     function deskewImage(srcMat) {
-        let gray = new cv.Mat();
-        cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
-        let edges = new cv.Mat();
-        cv.Canny(gray, edges, 50, 150, 3);
-        let lines = new cv.Mat();
-        cv.HoughLines(edges, lines, 1, Math.PI/180, 100);
+        let gray = new cv.Mat(); cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
+        let edges = new cv.Mat(); cv.Canny(gray, edges, 50, 150, 3);
+        let lines = new cv.Mat(); cv.HoughLines(edges, lines, 1, Math.PI/180, 100);
         let angles = [];
-        for (let i = 0; i < lines.rows; i++) {
-            let theta = lines.data32F[i*2+1];
-            let angle = theta * 180 / Math.PI;
-            if (angle < 45 || angle > 135) angles.push(angle);
-        }
-        let medianAngle = 0;
-        if (angles.length > 0) {
-            angles.sort((a,b)=>a-b);
-            medianAngle = angles[Math.floor(angles.length/2)];
-        }
+        for (let i = 0; i < lines.rows; i++) { let theta = lines.data32F[i*2+1]; let angle = theta * 180 / Math.PI; if (angle < 45 || angle > 135) angles.push(angle); }
+        let medianAngle = 0; if (angles.length) { angles.sort((a,b)=>a-b); medianAngle = angles[Math.floor(angles.length/2)]; }
         let rotation = medianAngle - 90;
         if (Math.abs(rotation) < 2) return srcMat.clone();
         let center = new cv.Point(srcMat.cols/2, srcMat.rows/2);
-        let rotMat = cv.getRotationMatrix2D(center, rotation, 1.0);
-        let dst = new cv.Mat();
+        let rotMat = cv.getRotationMatrix2D(center, rotation, 1.0); let dst = new cv.Mat();
         cv.warpAffine(srcMat, dst, rotMat, new cv.Size(srcMat.cols, srcMat.rows), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255,255,255));
-        gray.delete(); edges.delete(); lines.delete(); rotMat.delete();
-        return dst;
+        gray.delete(); edges.delete(); lines.delete(); rotMat.delete(); return dst;
     }
 
     async function detectarRespostasComPontos(imageBase64) {
@@ -502,319 +307,132 @@
             let img = new Image();
             img.onload = () => {
                 try {
-                    let src = cv.imread(img);
-                    let gray = new cv.Mat();
-                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-                    
+                    let src = cv.imread(img); let gray = new cv.Mat(); cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
                     let marcadores = encontrarMarcadores(gray);
                     let corrigiuPerspectiva = false;
                     if (marcadores.length === 4) {
-                        logArea.innerHTML += "\n🔲 4 marcadores detectados! Aplicando correção de perspectiva...";
-                        let srcWarp = aplicarPerspectiva(src, marcadores);
-                        src.delete();
-                        src = srcWarp;
-                        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-                        corrigiuPerspectiva = true;
-                    } else {
-                        logArea.innerHTML += `\n⚠️ Marcadores insuficientes (${marcadores.length}/4). Usando deskew (fallback).`;
-                        let deskewed = deskewImage(src);
-                        src.delete();
-                        src = deskewed;
-                        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-                    }
-                    
-                    let grayEq = equalizarContraste(gray);
-                    gray.delete();
-                    gray = grayEq;
-                    
+                        logArea.innerHTML += "\n🔲 4 marcadores detectados! Aplicando perspectiva...";
+                        let srcWarp = aplicarPerspectiva(src, marcadores); src.delete(); src = srcWarp;
+                        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0); corrigiuPerspectiva = true;
+                    } else { logArea.innerHTML += `\n⚠️ Marcadores insuficientes (${marcadores.length}/4). Fallback deskew.`; let deskewed = deskewImage(src); src.delete(); src = deskewed; cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0); }
+                    let grayEq = equalizarContraste(gray); gray.delete(); gray = grayEq;
                     let circles = new cv.Mat();
                     cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, 30, 100, 30, 8, 25);
-                    if (circles.cols === 0) {
-                        src.delete(); gray.delete(); circles.delete();
-                        reject("Nenhum círculo detectado. Verifique iluminação/enquadramento.");
-                        return;
-                    }
-                    
+                    if (circles.cols === 0) { src.delete(); gray.delete(); circles.delete(); reject("Nenhum círculo detectado."); return; }
                     let circleData = [];
-                    for (let i = 0; i < circles.cols; i++) {
-                        let x = circles.data32F[i*3];
-                        let y = circles.data32F[i*3+1];
-                        let r = circles.data32F[i*3+2];
-                        circleData.push({ x, y, r });
-                    }
+                    for (let i = 0; i < circles.cols; i++) { let x = circles.data32F[i*3]; let y = circles.data32F[i*3+1]; let r = circles.data32F[i*3+2]; circleData.push({ x, y, r }); }
                     circleData.sort((a,b) => a.y - b.y);
-                    let rows = [];
-                    let thresholdY = 25;
+                    let rows = [], thresholdY = 25;
                     for (let c of circleData) {
                         let added = false;
-                        for (let row of rows) {
-                            if (Math.abs(row.avgY - c.y) < thresholdY) {
-                                row.circles.push(c);
-                                row.avgY = (row.avgY * (row.circles.length-1) + c.y) / row.circles.length;
-                                added = true;
-                                break;
-                            }
-                        }
+                        for (let row of rows) { if (Math.abs(row.avgY - c.y) < thresholdY) { row.circles.push(c); row.avgY = (row.avgY * (row.circles.length-1) + c.y) / row.circles.length; added = true; break; } }
                         if (!added) rows.push({ avgY: c.y, circles: [c] });
                     }
                     for (let row of rows) row.circles.sort((a,b) => a.x - b.x);
-                    
                     let validRows = rows.filter(row => Math.abs(row.circles.length - numAlternativas) <= 1);
-                    if (validRows.length < numQuestoes - 2 || validRows.length > numQuestoes + 2) {
-                        src.delete(); gray.delete(); circles.delete();
-                        reject(`Detectadas ${validRows.length} linhas de círculos, esperado ~${numQuestoes}. Tente enquadrar toda a folha.`);
-                        return;
-                    }
+                    if (validRows.length < numQuestoes - 2 || validRows.length > numQuestoes + 2) { src.delete(); gray.delete(); circles.delete(); reject(`Detectadas ${validRows.length} linhas, esperado ~${numQuestoes}.`); return; }
                     let questoesLinhas = validRows.slice(0, numQuestoes);
-                    let respostas = {};
-                    let circlesPositions = {};
-                    
+                    let respostas = {}, circlesPositions = {};
                     for (let idx = 0; idx < questoesLinhas.length; idx++) {
-                        let row = questoesLinhas[idx];
-                        let circlesRow = row.circles.slice(0, numAlternativas);
+                        let row = questoesLinhas[idx]; let circlesRow = row.circles.slice(0, numAlternativas);
                         circlesPositions[idx+1] = {};
                         for (let j = 0; j < circlesRow.length; j++) {
-                            let circ = circlesRow[j];
-                            let altLetra = letras[j];
+                            let circ = circlesRow[j]; let altLetra = letras[j];
                             circlesPositions[idx+1][altLetra] = { x: circ.x, y: circ.y, r: circ.r };
                             let mask = new cv.Mat.zeros(gray.rows, gray.cols, cv.CV_8UC1);
                             cv.circle(mask, new cv.Point(circ.x, circ.y), circ.r-3, new cv.Scalar(255), -1);
-                            let mean = new cv.Mat();
-                            cv.mean(gray, mask, mean);
-                            let intensidade = mean.data64F[0];
-                            mask.delete(); mean.delete();
-                            
-                            // Limiar adaptativo melhorado
+                            let mean = new cv.Mat(); cv.mean(gray, mask, mean);
+                            let intensidade = mean.data64F[0]; mask.delete(); mean.delete();
                             let limiar = (intensidade < 80) ? 140 : 110;
-                            if (intensidade < limiar) {
-                                if (!respostas[idx+1] || intensidade < (respostas[idx+1].intens || 255)) {
-                                    respostas[idx+1] = { alt: altLetra, intens: intensidade };
-                                }
-                            }
+                            if (intensidade < limiar) { if (!respostas[idx+1] || intensidade < (respostas[idx+1].intens || 255)) respostas[idx+1] = { alt: altLetra, intens: intensidade }; }
                         }
                     }
                     src.delete(); gray.delete(); circles.delete();
-                    resolve({ 
-                        respostas: Object.fromEntries(Object.entries(respostas).map(([k,v]) => [k, v.alt])),
-                        circlesPositions,
-                        perspectivaAplicada: corrigiuPerspectiva
-                    });
-                } catch (err) {
-                    reject("Erro no processamento: " + err.message);
-                }
+                    resolve({ respostas: Object.fromEntries(Object.entries(respostas).map(([k,v]) => [k, v.alt])), circlesPositions, perspectivaAplicada: corrigiuPerspectiva, marcadoresPositions: marcadores });
+                } catch (err) { reject("Erro: " + err.message); }
             };
             img.src = imageBase64;
         });
     }
 
     async function executarCorrecao() {
-        if (!currentImageData) {
-            logArea.innerHTML += "\n⚠️ Nenhuma imagem. Tire foto ou faça upload.";
-            return;
-        }
-        
+        if (!currentImageData) { logArea.innerHTML += "\n⚠️ Nenhuma imagem."; return; }
         const gabarito = obterGabaritoDaTela();
-        const questoesComGabarito = Object.keys(gabarito).length;
-        
-        if (questoesComGabarito === 0) {
-            logArea.innerHTML += "\n⚠️ Defina o gabarito oficial na tabela à direita.";
-            alert("❌ Nenhuma resposta definida no gabarito!\n\nPreencha o gabarito à direita antes de corrigir.");
-            return;
-        }
-        
-        if (questoesComGabarito < numQuestoes) {
-            const faltam = numQuestoes - questoesComGabarito;
-            const confirmar = confirm(`⚠️ Atenção: ${faltam} questão(ões) sem gabarito definido!\n\nDeseja continuar mesmo assim?`);
-            if (!confirmar) return;
-        }
-        
-        if (!cvReady) {
-            logArea.innerHTML += "\n⏳ OpenCV ainda carregando. Tente em alguns segundos.";
-            return;
-        }
-        
-        logArea.innerHTML += "\n🔍 Processando imagem (busca por marcadores + correção de perspectiva)...";
-        
+        if (Object.keys(gabarito).length === 0) { alert("❌ Defina o gabarito oficial!"); return; }
+        if (!cvReady) { logArea.innerHTML += "\n⏳ OpenCV carregando..."; return; }
+        logArea.innerHTML += "\n🔍 Processando imagem...";
         try {
-            const { respostas: respostasAluno, circlesPositions, perspectivaAplicada } = await detectarRespostasComPontos(currentImageData);
+            const { respostas: respostasAluno, circlesPositions, perspectivaAplicada, marcadoresPositions } = await detectarRespostasComPontos(currentImageData);
             logArea.innerHTML += `\n📝 Respostas detectadas: ${JSON.stringify(respostasAluno)}`;
-            if (perspectivaAplicada) logArea.innerHTML += "\n✅ Correção de perspectiva aplicada com sucesso!";
-            
+            if (perspectivaAplicada) logArea.innerHTML += "\n✅ Perspectiva aplicada.";
             let img = new Image();
             img.onload = () => {
-                resultCanvas.width = img.width;
-                resultCanvas.height = img.height;
-                let ctx = resultCanvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                let acertos = 0;
-                let detalhes = [];
-                let estatisticas = { corretas: [], erradas: [], naoDetectadas: [] };
-                
+                resultCanvas.width = img.width; resultCanvas.height = img.height;
+                let ctx = resultCanvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+                let acertos = 0, detalhes = [], estatisticas = { corretas: [], erradas: [], naoDetectadas: [] };
                 for (let i = 1; i <= numQuestoes; i++) {
-                    let correta = gabarito[i];
-                    let aluno = respostasAluno[i];
-                    
-                    // Usa trim() para evitar erros por espaços
+                    let correta = gabarito[i], aluno = respostasAluno[i];
                     if (correta && aluno && correta.trim() === aluno.trim()) {
-                        acertos++;
-                        detalhes.push(`✅ Q${i}: ${aluno}`);
-                        estatisticas.corretas.push(i);
-                        
+                        acertos++; detalhes.push(`✅ Q${i}: ${aluno}`); estatisticas.corretas.push(i);
                         if (circlesPositions[i] && circlesPositions[i][aluno]) {
                             let pos = circlesPositions[i][aluno];
-                            ctx.beginPath();
-                            ctx.arc(pos.x, pos.y, pos.r + 4, 0, 2 * Math.PI);
-                            ctx.fillStyle = '#adff2f';
-                            ctx.fill();
-                            ctx.strokeStyle = '#006400';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
+                            ctx.beginPath(); ctx.arc(pos.x, pos.y, pos.r+4, 0, 2*Math.PI); ctx.fillStyle = '#adff2f'; ctx.fill(); ctx.strokeStyle = '#006400'; ctx.lineWidth = 2; ctx.stroke();
+                            // Ponto verde central
+                            ctx.beginPath(); ctx.arc(pos.x, pos.y, pos.r*0.3, 0, 2*Math.PI); ctx.fillStyle = '#00FF00'; ctx.fill();
                         }
                     } else if (correta && aluno) {
-                        detalhes.push(`❌ Q${i}: ${aluno} (gabarito ${correta})`);
-                        estatisticas.erradas.push(i);
-                        
+                        detalhes.push(`❌ Q${i}: ${aluno} (gabarito ${correta})`); estatisticas.erradas.push(i);
                         if (circlesPositions[i] && circlesPositions[i][aluno]) {
                             let pos = circlesPositions[i][aluno];
-                            ctx.beginPath();
-                            ctx.arc(pos.x, pos.y, pos.r + 4, 0, 2 * Math.PI);
-                            ctx.fillStyle = '#ffcccc';
-                            ctx.fill();
-                            ctx.strokeStyle = '#ff0000';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
+                            ctx.beginPath(); ctx.arc(pos.x, pos.y, pos.r+4, 0, 2*Math.PI); ctx.fillStyle = '#ffcccc'; ctx.fill(); ctx.strokeStyle = '#ff0000'; ctx.lineWidth = 2; ctx.stroke();
                         }
-                    } else if (correta && !aluno) {
-                        detalhes.push(`⚠️ Q${i}: não detectado (gabarito ${correta})`);
-                        estatisticas.naoDetectadas.push(i);
-                    }
+                    } else if (correta && !aluno) { detalhes.push(`⚠️ Q${i}: não detectado (gabarito ${correta})`); estatisticas.naoDetectadas.push(i); }
                 }
-                
-                let nota = (acertos / numQuestoes) * 10;
-                let percentual = (acertos / numQuestoes) * 100;
-                
+                // ----- DESENHAR MARCADORES AMARELOS E RETÂNGULO VERDE -----
+                if (marcadoresPositions && marcadoresPositions.length === 4) {
+                    // Desenhar os quatro pontos amarelos
+                    for (let m of marcadoresPositions) {
+                        ctx.beginPath(); ctx.arc(m.centerX, m.centerY, 12, 0, 2*Math.PI);
+                        ctx.fillStyle = '#FFD700'; ctx.fill(); ctx.strokeStyle = '#B8860B'; ctx.lineWidth = 2; ctx.stroke();
+                    }
+                    // Desenhar o retângulo verde (conectando os cantos na ordem correta)
+                    ctx.beginPath();
+                    ctx.moveTo(marcadoresPositions[0].centerX, marcadoresPositions[0].centerY);
+                    ctx.lineTo(marcadoresPositions[1].centerX, marcadoresPositions[1].centerY);
+                    ctx.lineTo(marcadoresPositions[3].centerX, marcadoresPositions[3].centerY);
+                    ctx.lineTo(marcadoresPositions[2].centerX, marcadoresPositions[2].centerY);
+                    ctx.closePath();
+                    ctx.strokeStyle = '#00FF00'; ctx.lineWidth = 3; ctx.stroke();
+                    logArea.innerHTML += "\n🟡 Pontos amarelos e retângulo verde desenhados!";
+                } else { logArea.innerHTML += "\n⚠️ Não foi possível desenhar os cantos (marcadores insuficientes)."; }
+
+                let nota = (acertos / numQuestoes) * 10, percentual = (acertos / numQuestoes) * 100;
                 scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
                 gradeDetail.innerHTML = `🎓 NOTA: ${nota.toFixed(1)} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos!==1?'s':''}`;
-                
-                // Estatísticas adicionais
-                statsArea.innerHTML = `
-                    <div class="stat-item">
-                        <div class="stat-value" style="color: #10b981;">${estatisticas.corretas.length}</div>
-                        <div class="stat-label">Acertos</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" style="color: #ef4444;">${estatisticas.erradas.length}</div>
-                        <div class="stat-label">Erros</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" style="color: #eab308;">${estatisticas.naoDetectadas.length}</div>
-                        <div class="stat-label">Não detectadas</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${nota.toFixed(1)}</div>
-                        <div class="stat-label">Nota (0-10)</div>
-                    </div>
-                `;
-                
+                statsArea.innerHTML = `<div class="stat-item"><div class="stat-value" style="color:#10b981;">${estatisticas.corretas.length}</div><div class="stat-label">Acertos</div></div>
+                    <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${estatisticas.erradas.length}</div><div class="stat-label">Erros</div></div>
+                    <div class="stat-item"><div class="stat-value" style="color:#eab308;">${estatisticas.naoDetectadas.length}</div><div class="stat-label">Não detectadas</div></div>
+                    <div class="stat-item"><div class="stat-value">${nota.toFixed(1)}</div><div class="stat-label">Nota (0-10)</div></div>`;
                 resultArea.style.display = 'block';
-                logArea.innerHTML += `\n📊 CORREÇÃO:\n${detalhes.join('\n')}`;
-                logArea.innerHTML += `\n🎉 Total de acertos: ${acertos}/${numQuestoes}`;
-                
-                ultimaCorrecao = {
-                    data: new Date().toLocaleString(),
-                    titulo: tituloProvaInput.value,
-                    totalQuestoes: numQuestoes,
-                    totalAlternativas: numAlternativas,
-                    acertos: acertos,
-                    nota: nota.toFixed(1),
-                    percentual: percentual.toFixed(1),
-                    detalhes: detalhes,
-                    respostasAluno: respostasAluno,
-                    gabarito: gabarito,
-                    estatisticas: estatisticas
-                };
-                
-                // Rolagem automática para o resultado
+                logArea.innerHTML += `\n📊 CORREÇÃO:\n${detalhes.join('\n')}\n🎉 Total de acertos: ${acertos}/${numQuestoes}`;
+                ultimaCorrecao = { data: new Date().toLocaleString(), titulo: tituloProvaInput.value, totalQuestoes: numQuestoes, totalAlternativas: numAlternativas, acertos, nota: nota.toFixed(1), percentual: percentual.toFixed(1), detalhes, respostasAluno, gabarito, estatisticas };
                 resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             };
             img.src = currentImageData;
-        } catch (err) {
-            logArea.innerHTML += `\n❌ Erro: ${err}`;
-            alert(`Erro na correção: ${err}\n\nTente tirar uma foto com melhor iluminação e enquadramento.`);
-        }
+        } catch (err) { logArea.innerHTML += `\n❌ Erro: ${err}`; alert(`Erro: ${err}\n\nTente melhor iluminação e enquadramento.`); }
     }
 
-    // ---------- EXPORTAÇÃO ----------
-    function exportarJSON() {
-        if (!ultimaCorrecao) { alert("Nenhuma correção realizada ainda."); return; }
-        const dataStr = JSON.stringify(ultimaCorrecao, null, 2);
-        const blob = new Blob([dataStr], {type: "application/json"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `correcao_${new Date().toISOString().slice(0,19)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        logArea.innerHTML += "\n📄 JSON exportado.";
-    }
+    function exportarJSON() { if (!ultimaCorrecao) { alert("Nenhuma correção."); return; } const dataStr = JSON.stringify(ultimaCorrecao, null, 2); const blob = new Blob([dataStr], {type:"application/json"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `correcao_${new Date().toISOString().slice(0,19)}.json`; a.click(); URL.revokeObjectURL(blob); logArea.innerHTML += "\n📄 JSON exportado."; }
+    function exportarCSV() { if (!ultimaCorrecao) { alert("Nenhuma correção."); return; } let csvRows = [["Questão","Gabarito","Resposta Aluno","Resultado"]]; for (let i=1;i<=numQuestoes;i++) { let gab = ultimaCorrecao.gabarito[i] || "-"; let resp = ultimaCorrecao.respostasAluno[i] || "-"; let res = (gab === resp) ? "Acertou" : (resp !== "-" ? "Errou" : "Não detectado"); csvRows.push([i, gab, resp, res]); } csvRows.push(["","","",""],["Total Acertos",ultimaCorrecao.acertos,"",""],["Total Questões",ultimaCorrecao.totalQuestoes,"",""],["Nota",ultimaCorrecao.nota,"",""],["Percentual",ultimaCorrecao.percentual+"%","",""],["Data",ultimaCorrecao.data,"",""]); const csvContent = csvRows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n"); const blob = new Blob(["\uFEFF"+csvContent], {type:"text/csv;charset=utf-8;"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `correcao_${new Date().toISOString().slice(0,19)}.csv`; a.click(); URL.revokeObjectURL(blob); logArea.innerHTML += "\n📊 CSV exportado."; }
 
-    function exportarCSV() {
-        if (!ultimaCorrecao) { alert("Nenhuma correção realizada ainda."); return; }
-        let csvRows = [];
-        csvRows.push(["Questão", "Gabarito", "Resposta Aluno", "Resultado"]);
-        for (let i = 1; i <= numQuestoes; i++) {
-            let gab = ultimaCorrecao.gabarito[i] || "-";
-            let resp = ultimaCorrecao.respostasAluno[i] || "-";
-            let res = (gab === resp) ? "Acertou" : (resp !== "-" ? "Errou" : "Não detectado");
-            csvRows.push([i, gab, resp, res]);
-        }
-        csvRows.push(["", "", "", ""]);
-        csvRows.push(["Total Acertos", ultimaCorrecao.acertos, "", ""]);
-        csvRows.push(["Total Questões", ultimaCorrecao.totalQuestoes, "", ""]);
-        csvRows.push(["Nota", ultimaCorrecao.nota, "", ""]);
-        csvRows.push(["Percentual", ultimaCorrecao.percentual + "%", "", ""]);
-        csvRows.push(["Data", ultimaCorrecao.data, "", ""]);
-        
-        const csvContent = csvRows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
-        const blob = new Blob(["\uFEFF" + csvContent], {type: "text/csv;charset=utf-8;"});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `correcao_${new Date().toISOString().slice(0,19)}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        logArea.innerHTML += "\n📊 CSV exportado.";
-    }
-
-    // ---------- EVENTOS ----------
-    captureBtn.addEventListener('click', capturarFoto);
-    toggleCameraBtn.addEventListener('click', toggleCamera);
+    captureBtn.addEventListener('click', capturarFoto); toggleCameraBtn.addEventListener('click', toggleCamera);
     fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
-    corrigirBtn.addEventListener('click', executarCorrecao);
-    resetGabaritoBtn.addEventListener('click', restaurarGabaritoExemplo);
+    corrigirBtn.addEventListener('click', executarCorrecao); resetGabaritoBtn.addEventListener('click', restaurarGabaritoExemplo);
     validarGabaritoBtn.addEventListener('click', validarPreenchimentoGabarito);
     btnAplicarConfig.addEventListener('click', () => { atualizarCartao(); logArea.innerHTML += "\n⚙️ Configurações aplicadas."; });
-    btnImprimirCartao.addEventListener('click', () => {
-        let conteudo = document.getElementById('printArea').innerHTML;
-        let win = window.open('', '_blank');
-        win.document.write(`<html><head><title>Cartão de Respostas</title><style>
-            @media print{ 
-                body{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;} 
-                .marcador{background:#000 !important;} 
-            } 
-            .marcador{width:22px;height:22px;background:#000;border:1px solid #000;}
-            body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-        </style></head><body>${conteudo}</body></html>`);
-        win.document.close();
-        win.print();
-    });
-    btnExportarJSON.addEventListener('click', exportarJSON);
-    btnExportarCSV.addEventListener('click', exportarCSV);
-
-    // Inicialização
-    iniciarCamera();
-    atualizarCartao();
+    btnImprimirCartao.addEventListener('click', () => { let conteudo = document.getElementById('printArea').innerHTML; let win = window.open('', '_blank'); win.document.write(`<html><head><title>Cartão de Respostas</title><style>@media print{ body{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;} .marcador{background:#000 !important;} } .marcador{width:22px;height:22px;background:#000;border:1px solid #000;} body{margin:0;padding:20px;}</style></head><body>${conteudo}</body></html>`); win.document.close(); win.print(); });
+    btnExportarJSON.addEventListener('click', exportarJSON); btnExportarCSV.addEventListener('click', exportarCSV);
+    iniciarCamera(); atualizarCartao();
 </script>
 </body>
 </html>
