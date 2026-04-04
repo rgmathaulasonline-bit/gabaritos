@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Leitor de Gabarito - Marcadores Visuais Imediatos</title>
+    <title>Leitor de Gabarito - OMR Robusto</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #eef2f5; margin: 0; padding: 20px; }
@@ -39,6 +39,9 @@
         .stat-item { text-align: center; }
         .stat-value { font-size: 1.5rem; font-weight: bold; color: #1e40af; }
         .stat-label { font-size: 0.75rem; color: #475569; }
+        .point-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: center; }
+        .point-btn { background: #8b5cf6; font-size: 0.75rem; padding: 5px 10px; margin: 0; }
+        .point-btn.active { background: #10b981; }
         @media print {
             body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
             .marcador { background: #000000 !important; border: 1px solid #000000 !important; }
@@ -50,7 +53,7 @@
 </head>
 <body>
 <div class="container">
-    <h1>📋 Leitor de Gabarito (Marcadores visíveis na foto)</h1>
+    <h1>📋 Leitor de Gabarito (OMR Robusto - Grid)</h1>
     <div class="config-panel no-print">
         <div class="config-item">
             <label>✏️ Título da Prova</label>
@@ -88,7 +91,17 @@
                     <input type="file" id="fileUpload" accept="image/jpeg,image/png" style="display:none;">
                 </div>
                 <canvas id="canvas" style="display:none;"></canvas>
-                <div id="previewArea" style="margin-top: 15px;"><canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas></div>
+                <div id="previewArea" style="margin-top: 15px;">
+                    <canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas>
+                </div>
+                <div class="point-selector">
+                    <span style="font-size:12px;">Clique nos 4 cantos da folha:</span>
+                    <button id="point1Btn" class="point-btn">Ponto 1</button>
+                    <button id="point2Btn" class="point-btn">Ponto 2</button>
+                    <button id="point3Btn" class="point-btn">Ponto 3</button>
+                    <button id="point4Btn" class="point-btn">Ponto 4</button>
+                    <button id="resetPointsBtn" class="point-btn">Resetar</button>
+                </div>
             </div>
         </div>
         <div class="column">
@@ -120,8 +133,17 @@
     let cameraActive = true;
     let stream = null;
     let ultimaCorrecao = null;
-    let lastDetectedVertices = null;      // guarda os vértices da última detecção
-    let lastWarpedImageData = null;       // guarda a imagem warpada para correção
+    
+    // Pontos para transformação de perspectiva
+    let pontos = [
+        { x: 0.2, y: 0.2 },   // canto superior esquerdo
+        { x: 0.8, y: 0.2 },   // canto superior direito
+        { x: 0.8, y: 0.8 },   // canto inferior direito
+        { x: 0.2, y: 0.8 }    // canto inferior esquerdo
+    ];
+    let pontoAtual = 0;
+    let imagemOriginalWidth = 0, imagemOriginalHeight = 0;
+    let warpedImageCache = null; // cache da imagem warpada para debug
 
     // Elementos DOM
     const video = document.getElementById('video');
@@ -146,12 +168,19 @@
     const btnExportarCSV = document.getElementById('btnExportarCSV');
     const gabaritoStatus = document.getElementById('gabaritoStatus');
     const statsArea = document.getElementById('statsArea');
+    
+    // Botões dos pontos
+    const point1Btn = document.getElementById('point1Btn');
+    const point2Btn = document.getElementById('point2Btn');
+    const point3Btn = document.getElementById('point3Btn');
+    const point4Btn = document.getElementById('point4Btn');
+    const resetPointsBtn = document.getElementById('resetPointsBtn');
 
     // ---------- ESPERA ATIVA PELO OpenCV ----------
     function esperarOpenCV() {
         if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
             cvReady = true;
-            logArea.innerHTML = "✅ OpenCV.js carregado! Detecção automática da folha ativa.";
+            logArea.innerHTML = "✅ OpenCV.js carregado! Clique nos 4 cantos da folha na imagem.";
         } else {
             logArea.innerHTML = "⏳ Carregando OpenCV... (verificando a cada 500ms)";
             setTimeout(esperarOpenCV, 500);
@@ -177,242 +206,103 @@
     function desligarCamera() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null; } cameraActive = false; toggleCameraBtn.textContent = "🟢 Ligar Câmera"; logArea.innerHTML += "\n📷 Câmera desligada."; }
     function toggleCamera() { cameraActive ? desligarCamera() : iniciarCamera(); }
 
-    // ---------- FUNÇÃO QUE DETECTA A FOLHA E DESENHA MARCADORES AMARELOS/VERDE NA IMAGEM ----------
-    async function detectarFolhaEDesenharMarcadores(imageBase64) {
-        return new Promise((resolve, reject) => {
-            if (!cvReady) reject("OpenCV não carregado.");
-            let img = new Image();
-            img.onload = () => {
-                try {
-                    let src = cv.imread(img);
-                    let gray = new cv.Mat();
-                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-                    
-                    let blur = new cv.Mat();
-                    cv.GaussianBlur(gray, blur, new cv.Size(5,5), 0);
-                    let edged = new cv.Mat();
-                    cv.Canny(blur, edged, 75, 200);
-                    
-                    let contours = new cv.MatVector();
-                    let hierarchy = new cv.Mat();
-                    cv.findContours(edged, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-                    
-                    let biggest = null;
-                    let maxArea = 0;
-                    for (let i = 0; i < contours.size(); i++) {
-                        let cnt = contours.get(i);
-                        let area = cv.contourArea(cnt);
-                        if (area > 5000) {
-                            let peri = cv.arcLength(cnt, true);
-                            let approx = new cv.Mat();
-                            cv.approxPolyDP(cnt, approx, 0.02 * peri, true);
-                            if (approx.rows == 4 && area > maxArea) {
-                                biggest = approx.clone();
-                                maxArea = area;
-                            }
-                            approx.delete();
-                        }
-                    }
-                    
-                    if (!biggest) {
-                        src.delete(); gray.delete(); blur.delete(); edged.delete(); contours.delete(); hierarchy.delete();
-                        reject("Nenhuma folha (retângulo de 4 lados) detectada. Enquadre bem a folha inteira.");
-                        return;
-                    }
-                    
-                    let vertices = [];
-                    for (let i = 0; i < 4; i++) {
-                        let point = biggest.intPtr(i, 0);
-                        let x = point[0], y = point[1];
-                        vertices.push({ x, y });
-                        cv.circle(src, new cv.Point(x, y), 12, [0,255,255,255], -1); // amarelo
-                    }
-                    // Desenhar as linhas do retângulo verde
-                    for (let i = 0; i < 4; i++) {
-                        let p1 = vertices[i];
-                        let p2 = vertices[(i+1)%4];
-                        cv.line(src, new cv.Point(p1.x, p1.y), new cv.Point(p2.x, p2.y), [0,255,0,255], 3);
-                    }
-                    
-                    // Converter a imagem com os desenhos para dataURL e exibir no canvas
-                    let canvasTemp = document.createElement('canvas');
-                    canvasTemp.width = src.cols;
-                    canvasTemp.height = src.rows;
-                    cv.imshow(canvasTemp, src);
-                    let markedImageDataURL = canvasTemp.toDataURL('image/jpeg', 0.9);
-                    
-                    // Liberar memória
-                    src.delete(); gray.delete(); blur.delete(); edged.delete(); contours.delete(); hierarchy.delete(); biggest.delete();
-                    
-                    resolve({ markedImageDataURL, vertices });
-                } catch (err) {
-                    reject("Erro na detecção da folha: " + err.message);
-                }
-            };
-            img.src = imageBase64;
-        });
+    // ---------- DESENHAR PONTOS E IMAGEM ----------
+    function desenharImagemComPontos(imgElement) {
+        const ctx = resultCanvas.getContext('2d');
+        resultCanvas.width = imgElement.width;
+        resultCanvas.height = imgElement.height;
+        ctx.drawImage(imgElement, 0, 0);
+        
+        // Desenhar os pontos e numerá-los
+        for (let i = 0; i < pontos.length; i++) {
+            const x = pontos[i].x * resultCanvas.width;
+            const y = pontos[i].y * resultCanvas.height;
+            ctx.beginPath();
+            ctx.arc(x, y, 10, 0, 2 * Math.PI);
+            ctx.fillStyle = i === pontoAtual ? '#00ff00' : '#ff0000';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText((i+1).toString(), x-5, y+6);
+        }
     }
     
-    // ---------- FUNÇÃO QUE APLICA WARP E DETECTA BOLHAS (OMR) ----------
-    async function aplicarWarpEDetectarBolhas(imageBase64, vertices) {
-        return new Promise((resolve, reject) => {
-            if (!cvReady) reject("OpenCV não carregado.");
-            if (!vertices || vertices.length !== 4) reject("Vértices inválidos para warp.");
-            let img = new Image();
-            img.onload = () => {
-                try {
-                    let src = cv.imread(img);
-                    let width = 800;
-                    let height = 1000;
-                    let ptsSrc = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                        vertices[0].x, vertices[0].y,
-                        vertices[1].x, vertices[1].y,
-                        vertices[3].x, vertices[3].y,
-                        vertices[2].x, vertices[2].y
-                    ]);
-                    let ptsDst = cv.matFromArray(4, 1, cv.CV_32FC2, [0,0, width,0, width,height, 0,height]);
-                    let M = cv.getPerspectiveTransform(ptsSrc, ptsDst);
-                    let warped = new cv.Mat();
-                    cv.warpPerspective(src, warped, M, new cv.Size(width, height));
-                    
-                    // Desenhar pontos amarelos e retângulo verde também na imagem warpada (nos cantos)
-                    // Os cantos da imagem warpada são (0,0), (width,0), (width,height), (0,height)
-                    let warpVertices = [{x:0,y:0}, {x:width,y:0}, {x:width,y:height}, {x:0,y:height}];
-                    for (let v of warpVertices) {
-                        cv.circle(warped, new cv.Point(v.x, v.y), 12, [0,255,255,255], -1);
-                    }
-                    cv.line(warped, new cv.Point(0,0), new cv.Point(width,0), [0,255,0,255], 3);
-                    cv.line(warped, new cv.Point(width,0), new cv.Point(width,height), [0,255,0,255], 3);
-                    cv.line(warped, new cv.Point(width,height), new cv.Point(0,height), [0,255,0,255], 3);
-                    cv.line(warped, new cv.Point(0,height), new cv.Point(0,0), [0,255,0,255], 3);
-                    
-                    // Detectar bolhas na imagem warpada
-                    let warpedGray = new cv.Mat();
-                    cv.cvtColor(warped, warpedGray, cv.COLOR_RGBA2GRAY);
-                    let thresh = new cv.Mat();
-                    cv.threshold(warpedGray, thresh, 150, 255, cv.THRESH_BINARY_INV);
-                    
-                    let circles = new cv.Mat();
-                    cv.HoughCircles(thresh, circles, cv.HOUGH_GRADIENT, 1, 30, 100, 30, 8, 25);
-                    if (circles.cols === 0) {
-                        src.delete(); ptsSrc.delete(); ptsDst.delete(); M.delete(); warped.delete(); warpedGray.delete(); thresh.delete(); circles.delete();
-                        reject("Nenhum círculo detectado na folha warpada.");
-                        return;
-                    }
-                    
-                    let circleData = [];
-                    for (let i = 0; i < circles.cols; i++) {
-                        let x = circles.data32F[i*3];
-                        let y = circles.data32F[i*3+1];
-                        let r = circles.data32F[i*3+2];
-                        circleData.push({ x, y, r });
-                    }
-                    circleData.sort((a,b) => a.y - b.y);
-                    let rows = [];
-                    let thresholdY = 25;
-                    for (let c of circleData) {
-                        let added = false;
-                        for (let row of rows) {
-                            if (Math.abs(row.avgY - c.y) < thresholdY) {
-                                row.circles.push(c);
-                                row.avgY = (row.avgY * (row.circles.length-1) + c.y) / row.circles.length;
-                                added = true;
-                                break;
-                            }
-                        }
-                        if (!added) rows.push({ avgY: c.y, circles: [c] });
-                    }
-                    for (let row of rows) row.circles.sort((a,b) => a.x - b.x);
-                    
-                    let validRows = rows.filter(row => Math.abs(row.circles.length - numAlternativas) <= 1);
-                    if (validRows.length < numQuestoes - 2 || validRows.length > numQuestoes + 2) {
-                        src.delete(); ptsSrc.delete(); ptsDst.delete(); M.delete(); warped.delete(); warpedGray.delete(); thresh.delete(); circles.delete();
-                        reject(`Detectadas ${validRows.length} linhas de círculos, esperado ~${numQuestoes}.`);
-                        return;
-                    }
-                    let questoesLinhas = validRows.slice(0, numQuestoes);
-                    let respostas = {};
-                    let circlesPositions = {};
-                    
-                    for (let idx = 0; idx < questoesLinhas.length; idx++) {
-                        let row = questoesLinhas[idx];
-                        let circlesRow = row.circles.slice(0, numAlternativas);
-                        circlesPositions[idx+1] = {};
-                        for (let j = 0; j < circlesRow.length; j++) {
-                            let circ = circlesRow[j];
-                            let altLetra = letras[j];
-                            circlesPositions[idx+1][altLetra] = { x: circ.x, y: circ.y, r: circ.r };
-                            let mask = new cv.Mat.zeros(thresh.rows, thresh.cols, cv.CV_8UC1);
-                            cv.circle(mask, new cv.Point(circ.x, circ.y), circ.r-3, new cv.Scalar(255), -1);
-                            let mean = new cv.Mat();
-                            cv.mean(thresh, mask, mean);
-                            let intensidade = mean.data64F[0];
-                            mask.delete(); mean.delete();
-                            
-                            let limiar = 120;
-                            if (intensidade > limiar) {
-                                if (!respostas[idx+1] || intensidade > (respostas[idx+1].intens || 0)) {
-                                    respostas[idx+1] = { alt: altLetra, intens: intensidade };
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Converter warpada com desenhos para dataURL
-                    let canvasWarp = document.createElement('canvas');
-                    canvasWarp.width = warped.cols;
-                    canvasWarp.height = warped.rows;
-                    cv.imshow(canvasWarp, warped);
-                    let warpedImageDataURL = canvasWarp.toDataURL('image/jpeg', 0.9);
-                    
-                    src.delete(); ptsSrc.delete(); ptsDst.delete(); M.delete(); warped.delete(); warpedGray.delete(); thresh.delete(); circles.delete();
-                    
-                    resolve({
-                        respostas: Object.fromEntries(Object.entries(respostas).map(([k,v]) => [k, v.alt])),
-                        circlesPositions,
-                        warpedImageBase64: warpedImageDataURL
-                    });
-                } catch (err) {
-                    reject("Erro no warp/detecção: " + err.message);
-                }
-            };
-            img.src = imageBase64;
-        });
+    function atualizarExibicaoComPontos() {
+        if (!currentImageData) return;
+        let img = new Image();
+        img.onload = () => {
+            imagemOriginalWidth = img.width;
+            imagemOriginalHeight = img.height;
+            desenharImagemComPontos(img);
+        };
+        img.src = currentImageData;
     }
     
-    // ---------- CAPTURA / UPLOAD: detecta e desenha marcadores imediatamente ----------
-    async function processarImagemRecente(imageData) {
-        if (!cvReady) {
-            logArea.innerHTML += "\n⏳ OpenCV ainda carregando, tente novamente em instantes.";
+    // ---------- MANIPULAÇÃO DE CLICKS NO CANVAS ----------
+    resultCanvas.addEventListener('click', (e) => {
+        if (!currentImageData) {
+            logArea.innerHTML += "\n⚠️ Carregue uma imagem primeiro.";
             return;
         }
-        logArea.innerHTML += "\n🔎 Detectando folha e desenhando marcadores...";
-        try {
-            const { markedImageDataURL, vertices } = await detectarFolhaEDesenharMarcadores(imageData);
-            // Exibe a imagem com os marcadores
-            let imgExib = new Image();
-            imgExib.onload = () => {
-                resultCanvas.width = imgExib.width;
-                resultCanvas.height = imgExib.height;
-                resultCanvas.getContext('2d').drawImage(imgExib, 0, 0);
-                logArea.innerHTML += "\n✅ Marcadores amarelos e retângulo verde desenhados na foto!";
-            };
-            imgExib.src = markedImageDataURL;
-            // Guarda os vértices para uso futuro na correção
-            lastDetectedVertices = vertices;
-            currentImageData = imageData;  // mantém a original
-        } catch (err) {
-            logArea.innerHTML += `\n❌ Erro na detecção: ${err}`;
-            alert(`Não foi possível detectar a folha: ${err}\n\nTire uma foto com toda a folha visível e bem iluminada.`);
-            // Ainda assim, exibe a imagem original sem marcadores
-            let imgOriginal = new Image();
-            imgOriginal.onload = () => {
-                resultCanvas.width = imgOriginal.width;
-                resultCanvas.height = imgOriginal.height;
-                resultCanvas.getContext('2d').drawImage(imgOriginal, 0, 0);
-            };
-            imgOriginal.src = imageData;
-        }
+        const rect = resultCanvas.getBoundingClientRect();
+        const scaleX = resultCanvas.width / rect.width;
+        const scaleY = resultCanvas.height / rect.height;
+        let canvasX = (e.clientX - rect.left) * scaleX;
+        let canvasY = (e.clientY - rect.top) * scaleY;
+        canvasX = Math.min(Math.max(0, canvasX), resultCanvas.width);
+        canvasY = Math.min(Math.max(0, canvasY), resultCanvas.height);
+        
+        pontos[pontoAtual] = { x: canvasX / resultCanvas.width, y: canvasY / resultCanvas.height };
+        pontoAtual = (pontoAtual + 1) % 4;
+        
+        // Atualizar estilo dos botões
+        [point1Btn, point2Btn, point3Btn, point4Btn].forEach((btn, idx) => {
+            if (idx === pontoAtual) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        
+        atualizarExibicaoComPontos();
+        logArea.innerHTML += `\n📍 Ponto ${pontoAtual === 0 ? 4 : pontoAtual} definido. ${pontoAtual === 0 ? 'Todos os pontos definidos!' : `Agora defina o ponto ${pontoAtual+1}`}`;
+    });
+    
+    function resetarPontos() {
+        pontos = [
+            { x: 0.2, y: 0.2 },
+            { x: 0.8, y: 0.2 },
+            { x: 0.8, y: 0.8 },
+            { x: 0.2, y: 0.8 }
+        ];
+        pontoAtual = 0;
+        [point1Btn, point2Btn, point3Btn, point4Btn].forEach((btn, idx) => {
+            if (idx === 0) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        atualizarExibicaoComPontos();
+        logArea.innerHTML += "\n🔄 Pontos resetados. Clique nos 4 cantos novamente.";
+    }
+    
+    point1Btn.addEventListener('click', () => { pontoAtual = 0; atualizarBotoesAtivos(); });
+    point2Btn.addEventListener('click', () => { pontoAtual = 1; atualizarBotoesAtivos(); });
+    point3Btn.addEventListener('click', () => { pontoAtual = 2; atualizarBotoesAtivos(); });
+    point4Btn.addEventListener('click', () => { pontoAtual = 3; atualizarBotoesAtivos(); });
+    resetPointsBtn.addEventListener('click', resetarPontos);
+    
+    function atualizarBotoesAtivos() {
+        [point1Btn, point2Btn, point3Btn, point4Btn].forEach((btn, idx) => {
+            if (idx === pontoAtual) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+        logArea.innerHTML += `\n🎯 Editando ponto ${pontoAtual+1}. Clique no canvas para mover.`;
+    }
+    
+    // ---------- CAPTURA / UPLOAD ----------
+    function processarImagemRecente(imageData) {
+        currentImageData = imageData;
+        resetarPontos(); // resetar pontos para nova imagem
+        logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 cantos da folha no canvas.";
     }
     
     function capturarFoto() {
@@ -427,14 +317,13 @@
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            let imageData = e.target.result;
-            processarImagemRecente(imageData);
+            processarImagemRecente(e.target.result);
             if (stream && cameraActive) desligarCamera();
         };
         reader.readAsDataURL(file);
     }
     
-    // ---------- CORREÇÃO (usa os vértices já detectados para fazer warp + OMR) ----------
+    // ---------- FUNÇÃO PRINCIPAL DE OMR (GRID) - BASEADA NO SEGUNDO CÓDIGO ----------
     async function executarCorrecao() {
         if (!currentImageData) {
             logArea.innerHTML += "\n⚠️ Nenhuma imagem. Tire foto ou faça upload.";
@@ -449,101 +338,199 @@
             logArea.innerHTML += "\n⏳ OpenCV ainda carregando. Tente em alguns segundos.";
             return;
         }
-        if (!lastDetectedVertices) {
-            alert("⚠️ A folha não foi detectada corretamente na foto. Tire outra foto com melhor enquadramento.");
-            return;
-        }
         
-        logArea.innerHTML += "\n🔍 Aplicando correção de perspectiva e detectando bolhas...";
+        logArea.innerHTML += "\n🔍 Aplicando correção de perspectiva e detectando marcações (OMR)...";
+        
         try {
-            const { respostas: respostasAluno, circlesPositions, warpedImageBase64 } = await aplicarWarpEDetectarBolhas(currentImageData, lastDetectedVertices);
-            logArea.innerHTML += `\n📝 Respostas detectadas: ${JSON.stringify(respostasAluno)}`;
-            
+            // Carregar imagem
             let img = new Image();
-            img.onload = () => {
-                resultCanvas.width = img.width;
-                resultCanvas.height = img.height;
-                let ctx = resultCanvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
+            img.src = currentImageData;
+            await new Promise((resolve) => { img.onload = resolve; });
+            
+            let src = cv.imread(img);
+            
+            // Obter pontos absolutos
+            let ptsAbs = pontos.map(p => ({ x: p.x * src.cols, y: p.y * src.rows }));
+            
+            // Definir tamanho da imagem warpada (padrão 1000x1300)
+            const DW = 1000;
+            const DH = 1300;
+            
+            // Criar matrizes de transformação
+            let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                ptsAbs[0].x, ptsAbs[0].y,
+                ptsAbs[1].x, ptsAbs[1].y,
+                ptsAbs[2].x, ptsAbs[2].y,
+                ptsAbs[3].x, ptsAbs[3].y
+            ]);
+            
+            let dstTri = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, DW, 0, DW, DH, 0, DH]);
+            
+            // Calcular matriz de perspectiva
+            let M = cv.getPerspectiveTransform(srcTri, dstTri);
+            
+            // Aplicar warp
+            let warped = new cv.Mat();
+            cv.warpPerspective(src, warped, M, new cv.Size(DW, DH));
+            
+            // Converter para escala de cinza
+            let gray = new cv.Mat();
+            cv.cvtColor(warped, gray, cv.COLOR_RGBA2GRAY);
+            
+            // Aplicar blur para reduzir ruído
+            let blurred = new cv.Mat();
+            cv.GaussianBlur(gray, blurred, new cv.Size(3, 3), 0);
+            
+            // Binarização com OTSU
+            let binary = new cv.Mat();
+            cv.threshold(blurred, binary, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
+            
+            // Dimensões do grid
+            const rows = numQuestoes;
+            const cols = numAlternativas;
+            const ch = Math.floor(DH / rows);  // altura de cada célula
+            const cw = Math.floor(DW / cols);  // largura de cada célula
+            
+            logArea.innerHTML += `\n📐 Grid: ${rows}x${cols} | Célula: ${cw}x${ch}px`;
+            
+            let respostasAluno = {};
+            let circlesPositions = {};
+            
+            // Analisar cada célula
+            for (let r = 0; r < rows; r++) {
+                let melhorAlternativa = -1;
+                let maiorContagem = 0;
+                let segundaMaior = 0;
+                let contagens = [];
                 
-                let acertos = 0;
-                let detalhes = [];
-                let estatisticas = { corretas: [], erradas: [], naoDetectadas: [] };
-                
-                for (let i = 1; i <= numQuestoes; i++) {
-                    let correta = gabarito[i];
-                    let aluno = respostasAluno[i];
-                    if (correta && aluno && correta.trim() === aluno.trim()) {
-                        acertos++;
-                        detalhes.push(`✅ Q${i}: ${aluno}`);
-                        estatisticas.corretas.push(i);
-                        if (circlesPositions[i] && circlesPositions[i][aluno]) {
-                            let pos = circlesPositions[i][aluno];
-                            ctx.beginPath();
-                            ctx.arc(pos.x, pos.y, pos.r + 4, 0, 2 * Math.PI);
-                            ctx.fillStyle = '#adff2f';
-                            ctx.fill();
-                            ctx.strokeStyle = '#006400';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                            // Ponto verde central
-                            ctx.beginPath();
-                            ctx.arc(pos.x, pos.y, pos.r * 0.35, 0, 2 * Math.PI);
-                            ctx.fillStyle = '#00FF00';
-                            ctx.fill();
-                        }
-                    } else if (correta && aluno) {
-                        detalhes.push(`❌ Q${i}: ${aluno} (gabarito ${correta})`);
-                        estatisticas.erradas.push(i);
-                        if (circlesPositions[i] && circlesPositions[i][aluno]) {
-                            let pos = circlesPositions[i][aluno];
-                            ctx.beginPath();
-                            ctx.arc(pos.x, pos.y, pos.r + 4, 0, 2 * Math.PI);
-                            ctx.fillStyle = '#ffcccc';
-                            ctx.fill();
-                            ctx.strokeStyle = '#ff0000';
-                            ctx.lineWidth = 2;
-                            ctx.stroke();
-                        }
-                    } else if (correta && !aluno) {
-                        detalhes.push(`⚠️ Q${i}: não detectado (gabarito ${correta})`);
-                        estatisticas.naoDetectadas.push(i);
+                for (let c = 0; c < cols; c++) {
+                    // Extrair ROI da célula
+                    let x = c * cw;
+                    let y = r * ch;
+                    let cell = binary.roi(new cv.Rect(x, y, cw, ch));
+                    
+                    // Contar pixels não-zero (preenchidos)
+                    let nz = cv.countNonZero(cell);
+                    contagens.push(nz);
+                    
+                    // Guardar posição para desenho
+                    if (!circlesPositions[r+1]) circlesPositions[r+1] = {};
+                    circlesPositions[r+1][letras[c]] = {
+                        x: x + cw/2,
+                        y: y + ch/2,
+                        r: Math.min(cw, ch) * 0.35
+                    };
+                    
+                    if (nz > maiorContagem) {
+                        segundaMaior = maiorContagem;
+                        maiorContagem = nz;
+                        melhorAlternativa = c;
+                    } else if (nz > segundaMaior) {
+                        segundaMaior = nz;
                     }
+                    
+                    cell.delete();
                 }
                 
-                let nota = (acertos / numQuestoes) * 10;
-                let percentual = (acertos / numQuestoes) * 100;
-                scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
-                gradeDetail.innerHTML = `🎓 NOTA: ${nota.toFixed(1)} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos!==1?'s':''}`;
-                statsArea.innerHTML = `
-                    <div class="stat-item"><div class="stat-value" style="color:#10b981;">${estatisticas.corretas.length}</div><div class="stat-label">Acertos</div></div>
-                    <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${estatisticas.erradas.length}</div><div class="stat-label">Erros</div></div>
-                    <div class="stat-item"><div class="stat-value" style="color:#eab308;">${estatisticas.naoDetectadas.length}</div><div class="stat-label">Não detectadas</div></div>
-                    <div class="stat-item"><div class="stat-value">${nota.toFixed(1)}</div><div class="stat-label">Nota (0-10)</div></div>
-                `;
-                resultArea.style.display = 'block';
-                logArea.innerHTML += `\n📊 CORREÇÃO:\n${detalhes.join('\n')}`;
-                logArea.innerHTML += `\n🎉 Total de acertos: ${acertos}/${numQuestoes}`;
+                // Critérios para considerar válido:
+                const minFill = cw * ch * 0.08; // mínimo 8% da célula preenchida
+                const isValido = (maiorContagem >= minFill) && (segundaMaior === 0 || maiorContagem > segundaMaior * 1.3);
                 
-                ultimaCorrecao = {
-                    data: new Date().toLocaleString(),
-                    titulo: tituloProvaInput.value,
-                    totalQuestoes: numQuestoes,
-                    totalAlternativas: numAlternativas,
-                    acertos: acertos,
-                    nota: nota.toFixed(1),
-                    percentual: percentual.toFixed(1),
-                    detalhes: detalhes,
-                    respostasAluno: respostasAluno,
-                    gabarito: gabarito,
-                    estatisticas: estatisticas
-                };
-                resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                if (isValido && melhorAlternativa !== -1) {
+                    respostasAluno[r+1] = letras[melhorAlternativa];
+                    logArea.innerHTML += `\n   Questão ${r+1}: ${letras[melhorAlternativa]} (${maiorContagem} pixels)`;
+                } else if (maiorContagem >= minFill) {
+                    logArea.innerHTML += `\n   ⚠️ Questão ${r+1}: marcação ambígua (${maiorContagem} vs ${segundaMaior})`;
+                } else {
+                    logArea.innerHTML += `\n   ❌ Questão ${r+1}: não detectado (${maiorContagem} pixels)`;
+                }
+            }
+            
+            // Desenhar resultado na imagem warpada
+            let resultImg = warped.clone();
+            for (let q in circlesPositions) {
+                for (let alt in circlesPositions[q]) {
+                    let pos = circlesPositions[q][alt];
+                    let cor = [200, 200, 200, 200];
+                    if (respostasAluno[q] === alt) {
+                        cor = [0, 255, 0, 255]; // verde para marcada
+                    } else if (gabarito[q] === alt) {
+                        cor = [255, 0, 0, 255]; // vermelho para gabarito
+                    }
+                    cv.circle(resultImg, new cv.Point(pos.x, pos.y), pos.r, cor, 2);
+                }
+            }
+            
+            // Exibir imagem warpada com marcações
+            let canvasWarp = document.createElement('canvas');
+            canvasWarp.width = resultImg.cols;
+            canvasWarp.height = resultImg.rows;
+            cv.imshow(canvasWarp, resultImg);
+            warpedImageCache = canvasWarp.toDataURL('image/jpeg', 0.9);
+            
+            let imgFinal = new Image();
+            imgFinal.onload = () => {
+                resultCanvas.width = imgFinal.width;
+                resultCanvas.height = imgFinal.height;
+                resultCanvas.getContext('2d').drawImage(imgFinal, 0, 0);
             };
-            img.src = warpedImageBase64;
+            imgFinal.src = warpedImageCache;
+            
+            // Calcular resultados
+            let acertos = 0;
+            let detalhes = [];
+            let estatisticas = { corretas: [], erradas: [], naoDetectadas: [] };
+            
+            for (let i = 1; i <= numQuestoes; i++) {
+                let correta = gabarito[i];
+                let aluno = respostasAluno[i];
+                if (correta && aluno && correta.trim() === aluno.trim()) {
+                    acertos++;
+                    detalhes.push(`✅ Q${i}: ${aluno}`);
+                    estatisticas.corretas.push(i);
+                } else if (correta && aluno) {
+                    detalhes.push(`❌ Q${i}: ${aluno} (gabarito ${correta})`);
+                    estatisticas.erradas.push(i);
+                } else if (correta && !aluno) {
+                    detalhes.push(`⚠️ Q${i}: não detectado (gabarito ${correta})`);
+                    estatisticas.naoDetectadas.push(i);
+                }
+            }
+            
+            let nota = (acertos / numQuestoes) * 10;
+            let percentual = (acertos / numQuestoes) * 100;
+            scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
+            gradeDetail.innerHTML = `🎓 NOTA: ${nota.toFixed(1)} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos!==1?'s':''}`;
+            statsArea.innerHTML = `
+                <div class="stat-item"><div class="stat-value" style="color:#10b981;">${estatisticas.corretas.length}</div><div class="stat-label">Acertos</div></div>
+                <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${estatisticas.erradas.length}</div><div class="stat-label">Erros</div></div>
+                <div class="stat-item"><div class="stat-value" style="color:#eab308;">${estatisticas.naoDetectadas.length}</div><div class="stat-label">Não detectadas</div></div>
+                <div class="stat-item"><div class="stat-value">${nota.toFixed(1)}</div><div class="stat-label">Nota (0-10)</div></div>
+            `;
+            resultArea.style.display = 'block';
+            logArea.innerHTML += `\n📊 CORREÇÃO FINALIZADA: ${acertos}/${numQuestoes} acertos`;
+            
+            ultimaCorrecao = {
+                data: new Date().toLocaleString(),
+                titulo: tituloProvaInput.value,
+                totalQuestoes: numQuestoes,
+                totalAlternativas: numAlternativas,
+                acertos: acertos,
+                nota: nota.toFixed(1),
+                percentual: percentual.toFixed(1),
+                detalhes: detalhes,
+                respostasAluno: respostasAluno,
+                gabarito: gabarito,
+                estatisticas: estatisticas
+            };
+            
+            // Liberar memória
+            src.delete(); srcTri.delete(); dstTri.delete(); M.delete(); warped.delete();
+            gray.delete(); blurred.delete(); binary.delete(); resultImg.delete();
+            
         } catch (err) {
-            logArea.innerHTML += `\n❌ Erro na correção: ${err}`;
-            alert(`Erro na correção: ${err}\n\nTente tirar uma nova foto com melhor enquadramento e iluminação.`);
+            logArea.innerHTML += `\n❌ Erro na correção: ${err.message}`;
+            alert(`Erro na correção: ${err.message}\n\nVerifique se os 4 pontos estão nos cantos da folha.`);
         }
     }
     
