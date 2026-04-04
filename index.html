@@ -24,16 +24,22 @@
         .card { background: #f8fafc; border-radius: 24px; padding: 18px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .section-title { font-weight: 700; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
         video, #imagePreview { width: 100%; border-radius: 20px; background: #0f172a; border: 2px solid #cbd5e1; max-height: 320px; object-fit: contain; }
-        #resultCanvas { width: 100%; border-radius: 20px; border: 2px solid #cbd5e1; background: #0f172a; }
+        #resultCanvas { width: 100%; border-radius: 20px; border: 2px solid #cbd5e1; background: #0f172a; cursor: crosshair; }
         .gabarito-grid { background: white; border-radius: 20px; border: 1px solid #cbd5e1; overflow-x: auto; }
         .gabarito-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
         .gabarito-table th, .gabarito-table td { border: 1px solid #cbd5e1; padding: 8px 4px; text-align: center; }
-        .gabarito-table select { padding: 5px; border-radius: 20px; border: 1px solid #94a3b8; background: white; }
+        .gabarito-table select { padding: 5px; border-radius: 20px; border: 1px solid #94a3b8; background: white; cursor: pointer; }
+        .gabarito-table select:hover { background: #f1f5f9; }
         .result-area { background: #eef2ff; border-radius: 24px; padding: 18px; text-align: center; margin-top: 20px; }
         .score { font-size: 2.5rem; font-weight: 800; color: #1e40af; }
         .log { background: #1e293b; color: #cbd5e6; border-radius: 20px; padding: 14px; font-family: monospace; font-size: 0.8rem; max-height: 250px; overflow-y: auto; margin-top: 20px; }
         .btn-export { background: #8b5cf6; margin-left: 10px; }
         .btn-export:hover { background: #7c3aed; }
+        .questao-faltando { background: #fee2e2; color: #dc2626; font-size: 0.7rem; padding: 2px 6px; border-radius: 12px; margin-left: 8px; }
+        .stats { display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid #cbd5e1; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: #1e40af; }
+        .stat-label { font-size: 0.75rem; color: #475569; }
 
         /* ========== FORÇA A IMPRESSÃO DOS MARCADORES PRETOS ========== */
         @media print {
@@ -75,8 +81,10 @@
         <div class="config-item">
             <label>🔤 Alternativas</label>
             <select id="numAlternativas">
-                <option value="2">2 (A,B)</option><option value="3">3 (A,B,C)</option>
-                <option value="4">4 (A,B,C,D)</option><option value="5" selected>5 (A,B,C,D,E)</option>
+                <option value="2">2 (A,B)</option>
+                <option value="3">3 (A,B,C)</option>
+                <option value="4">4 (A,B,C,D)</option>
+                <option value="5" selected>5 (A,B,C,D,E)</option>
                 <option value="6">6 (A,B,C,D,E,F)</option>
             </select>
         </div>
@@ -111,15 +119,20 @@
         </div>
         <div class="column">
             <div class="card">
-                <div class="section-title">✅ Gabarito Oficial</div>
+                <div class="section-title">
+                    ✅ Gabarito Oficial
+                    <span id="gabaritoStatus" style="font-size: 0.7rem;"></span>
+                </div>
                 <div id="gabaritoDinamico" class="gabarito-grid"></div>
                 <button id="resetGabaritoBtn" class="btn-secondary" style="margin-top: 16px;">Restaurar exemplo (cíclico)</button>
+                <button id="validarGabaritoBtn" class="btn-secondary" style="margin-top: 8px;">✓ Validar preenchimento</button>
             </div>
             <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem;">✨ CORRIGIR PROVA</button>
             <div id="resultArea" class="result-area" style="display:none;">
                 <div>🎯 ACERTOS</div>
                 <div class="score" id="scoreDisplay">0/0</div>
                 <div id="gradeDetail"></div>
+                <div class="stats" id="statsArea"></div>
             </div>
         </div>
     </div>
@@ -153,6 +166,7 @@
     const gradeDetail = document.getElementById('gradeDetail');
     const logArea = document.getElementById('logArea');
     const resetGabaritoBtn = document.getElementById('resetGabaritoBtn');
+    const validarGabaritoBtn = document.getElementById('validarGabaritoBtn');
     const btnAplicarConfig = document.getElementById('btnAplicarConfig');
     const btnImprimirCartao = document.getElementById('btnImprimirCartao');
     const tituloProvaInput = document.getElementById('tituloProva');
@@ -160,6 +174,8 @@
     const numAlternativasSelect = document.getElementById('numAlternativas');
     const btnExportarJSON = document.getElementById('btnExportarJSON');
     const btnExportarCSV = document.getElementById('btnExportarCSV');
+    const gabaritoStatus = document.getElementById('gabaritoStatus');
+    const statsArea = document.getElementById('statsArea');
 
     // ---------- ESPERA ATIVA PELO OpenCV ----------
     function esperarOpenCV() {
@@ -182,6 +198,7 @@
             await video.play();
             cameraActive = true;
             toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+            logArea.innerHTML += "\n📷 Câmera iniciada.";
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -189,8 +206,9 @@
                 await video.play();
                 cameraActive = true;
                 toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+                logArea.innerHTML += "\n📷 Câmera frontal/dianteira iniciada.";
             } catch (e) {
-                logArea.innerHTML += "\n❌ Erro na câmera. Use upload.";
+                logArea.innerHTML += "\n❌ Erro na câmera. Use upload de imagem.";
                 cameraActive = false;
                 toggleCameraBtn.textContent = "🟢 Ligar Câmera";
             }
@@ -201,6 +219,7 @@
         if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null; }
         cameraActive = false;
         toggleCameraBtn.textContent = "🟢 Ligar Câmera";
+        logArea.innerHTML += "\n📷 Câmera desligada.";
     }
 
     function toggleCamera() { cameraActive ? desligarCamera() : iniciarCamera(); }
@@ -242,12 +261,12 @@
         reader.readAsDataURL(file);
     }
 
-    // ---------- GERAÇÃO DO CARTÃO COM MARCADORES PRETOS (GARANTIDOS NA IMPRESSÃO) ----------
+    // ---------- GERAÇÃO DO CARTÃO COM MARCADORES PRETOS ----------
     function gerarCartaoHTML(titulo, qtd, altCount) {
         let letrasUsadas = letras.slice(0, altCount);
         return `
         <div style="position: relative; font-family: Arial, sans-serif; background: white; padding: 20px; border: 1px solid #ccc;">
-            <!-- MARCADORES PRETOS - Classe especial para forçar impressão -->
+            <!-- MARCADORES PRETOS -->
             <div class="marcador" style="position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; background: #000000; border: 1px solid #000000;"></div>
             <div class="marcador" style="position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; background: #000000; border: 1px solid #000000;"></div>
             <div class="marcador" style="position: absolute; bottom: 10px; left: 10px; width: 22px; height: 22px; background: #000000; border: 1px solid #000000;"></div>
@@ -273,6 +292,9 @@
         numQuestoes = Math.min(30, Math.max(1, numQuestoes));
         document.getElementById('printArea').innerHTML = gerarCartaoHTML(titulo, numQuestoes, numAlternativas);
         gerarInterfaceGabarito();
+        setTimeout(() => {
+            restaurarGabaritoExemplo();
+        }, 100);
     }
 
     function gerarInterfaceGabarito() {
@@ -293,20 +315,49 @@
                 let cell = row.insertCell();
                 let select = document.createElement('select');
                 select.innerHTML = `<option value="">-</option>${letrasUsadas.map(a => `<option value="${a}">${a}</option>`).join('')}`;
+                select.addEventListener('change', () => atualizarStatusGabarito());
                 cell.appendChild(select);
             }
         }
         container.appendChild(table);
+        atualizarStatusGabarito();
     }
 
+    function atualizarStatusGabarito() {
+        const gabarito = obterGabaritoDaTela();
+        const preenchidas = Object.keys(gabarito).length;
+        const faltam = numQuestoes - preenchidas;
+        
+        if (faltam === 0) {
+            gabaritoStatus.innerHTML = '<span style="color: #10b981;">✓ Todas preenchidas</span>';
+        } else {
+            gabaritoStatus.innerHTML = `<span style="color: #eab308;">⚠️ ${faltam} questão(ões) sem gabarito</span>`;
+        }
+    }
+
+    // ✅ FUNÇÃO CORRIGIDA - Obtém gabarito por linha (UMA resposta por questão)
     function obterGabaritoDaTela() {
         let gabarito = {};
-        const selects = document.querySelectorAll('#gabaritoDinamico select');
-        selects.forEach((select, index) => {
-            let questao = Math.floor(index / numAlternativas) + 1;
-            let valor = select.value;
-            if (valor && valor !== "") gabarito[questao] = valor;
-        });
+        const linhas = document.querySelectorAll('#gabaritoDinamico table tbody tr');
+        
+        for (let i = 0; i < linhas.length; i++) {
+            const selects = linhas[i].querySelectorAll('select');
+            let respostaEncontrada = false;
+            
+            for (let select of selects) {
+                const valor = select.value;
+                if (valor && valor !== "") {
+                    gabarito[i + 1] = valor;
+                    respostaEncontrada = true;
+                    break; // ✅ Garante apenas UMA resposta por questão
+                }
+            }
+            
+            if (!respostaEncontrada) {
+                console.warn(`Questão ${i + 1} sem gabarito definido`);
+            }
+        }
+        
         return gabarito;
     }
 
@@ -317,7 +368,27 @@
             let questao = Math.floor(index / numAlternativas) + 1;
             select.value = letrasUsadas[(questao-1) % letrasUsadas.length];
         });
+        atualizarStatusGabarito();
         logArea.innerHTML += "\n🔄 Gabarito exemplo cíclico carregado.";
+    }
+
+    function validarPreenchimentoGabarito() {
+        const gabarito = obterGabaritoDaTela();
+        const questoesFaltando = [];
+        
+        for (let i = 1; i <= numQuestoes; i++) {
+            if (!gabarito[i]) questoesFaltando.push(i);
+        }
+        
+        if (questoesFaltando.length > 0) {
+            alert(`⚠️ Questões sem gabarito definido: ${questoesFaltando.join(', ')}\n\nPreencha todas as alternativas no gabarito à direita.`);
+            logArea.innerHTML += `\n⚠️ Gabarito incompleto! Faltam questões: ${questoesFaltando.join(', ')}`;
+            return false;
+        } else {
+            alert(`✓ Gabarito completo! Todas as ${numQuestoes} questões estão preenchidas.`);
+            logArea.innerHTML += "\n✓ Gabarito validado com sucesso!";
+            return true;
+        }
     }
 
     // -------------------- FUNÇÕES DE DETECÇÃO DE MARCADORES E PERSPECTIVA --------------------
@@ -397,7 +468,6 @@
         return equalized;
     }
 
-    // Fallback deskew (inclinação simples)
     function deskewImage(srcMat) {
         let gray = new cv.Mat();
         cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
@@ -513,7 +583,10 @@
                             cv.mean(gray, mask, mean);
                             let intensidade = mean.data64F[0];
                             mask.delete(); mean.delete();
-                            if (intensidade < 110) {
+                            
+                            // Limiar adaptativo melhorado
+                            let limiar = (intensidade < 80) ? 140 : 110;
+                            if (intensidade < limiar) {
                                 if (!respostas[idx+1] || intensidade < (respostas[idx+1].intens || 255)) {
                                     respostas[idx+1] = { alt: altLetra, intens: intensidade };
                                 }
@@ -539,16 +612,29 @@
             logArea.innerHTML += "\n⚠️ Nenhuma imagem. Tire foto ou faça upload.";
             return;
         }
+        
         const gabarito = obterGabaritoDaTela();
-        if (Object.keys(gabarito).length === 0) {
+        const questoesComGabarito = Object.keys(gabarito).length;
+        
+        if (questoesComGabarito === 0) {
             logArea.innerHTML += "\n⚠️ Defina o gabarito oficial na tabela à direita.";
+            alert("❌ Nenhuma resposta definida no gabarito!\n\nPreencha o gabarito à direita antes de corrigir.");
             return;
         }
+        
+        if (questoesComGabarito < numQuestoes) {
+            const faltam = numQuestoes - questoesComGabarito;
+            const confirmar = confirm(`⚠️ Atenção: ${faltam} questão(ões) sem gabarito definido!\n\nDeseja continuar mesmo assim?`);
+            if (!confirmar) return;
+        }
+        
         if (!cvReady) {
             logArea.innerHTML += "\n⏳ OpenCV ainda carregando. Tente em alguns segundos.";
             return;
         }
+        
         logArea.innerHTML += "\n🔍 Processando imagem (busca por marcadores + correção de perspectiva)...";
+        
         try {
             const { respostas: respostasAluno, circlesPositions, perspectivaAplicada } = await detectarRespostasComPontos(currentImageData);
             logArea.innerHTML += `\n📝 Respostas detectadas: ${JSON.stringify(respostasAluno)}`;
@@ -563,12 +649,18 @@
                 
                 let acertos = 0;
                 let detalhes = [];
+                let estatisticas = { corretas: [], erradas: [], naoDetectadas: [] };
+                
                 for (let i = 1; i <= numQuestoes; i++) {
                     let correta = gabarito[i];
                     let aluno = respostasAluno[i];
-                    if (correta && aluno && correta === aluno) {
+                    
+                    // Usa trim() para evitar erros por espaços
+                    if (correta && aluno && correta.trim() === aluno.trim()) {
                         acertos++;
                         detalhes.push(`✅ Q${i}: ${aluno}`);
+                        estatisticas.corretas.push(i);
+                        
                         if (circlesPositions[i] && circlesPositions[i][aluno]) {
                             let pos = circlesPositions[i][aluno];
                             ctx.beginPath();
@@ -581,31 +673,75 @@
                         }
                     } else if (correta && aluno) {
                         detalhes.push(`❌ Q${i}: ${aluno} (gabarito ${correta})`);
+                        estatisticas.erradas.push(i);
+                        
+                        if (circlesPositions[i] && circlesPositions[i][aluno]) {
+                            let pos = circlesPositions[i][aluno];
+                            ctx.beginPath();
+                            ctx.arc(pos.x, pos.y, pos.r + 4, 0, 2 * Math.PI);
+                            ctx.fillStyle = '#ffcccc';
+                            ctx.fill();
+                            ctx.strokeStyle = '#ff0000';
+                            ctx.lineWidth = 2;
+                            ctx.stroke();
+                        }
                     } else if (correta && !aluno) {
                         detalhes.push(`⚠️ Q${i}: não detectado (gabarito ${correta})`);
+                        estatisticas.naoDetectadas.push(i);
                     }
                 }
+                
                 let nota = (acertos / numQuestoes) * 10;
+                let percentual = (acertos / numQuestoes) * 100;
+                
                 scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
-                gradeDetail.innerText = `🎓 NOTA: ${nota.toFixed(1)}  (${acertos} acerto${acertos!==1?'s':''})`;
+                gradeDetail.innerHTML = `🎓 NOTA: ${nota.toFixed(1)} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos!==1?'s':''}`;
+                
+                // Estatísticas adicionais
+                statsArea.innerHTML = `
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: #10b981;">${estatisticas.corretas.length}</div>
+                        <div class="stat-label">Acertos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: #ef4444;">${estatisticas.erradas.length}</div>
+                        <div class="stat-label">Erros</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: #eab308;">${estatisticas.naoDetectadas.length}</div>
+                        <div class="stat-label">Não detectadas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${nota.toFixed(1)}</div>
+                        <div class="stat-label">Nota (0-10)</div>
+                    </div>
+                `;
+                
                 resultArea.style.display = 'block';
                 logArea.innerHTML += `\n📊 CORREÇÃO:\n${detalhes.join('\n')}`;
-                logArea.innerHTML += `\n🎉 Total de acertos: ${acertos}`;
+                logArea.innerHTML += `\n🎉 Total de acertos: ${acertos}/${numQuestoes}`;
                 
                 ultimaCorrecao = {
                     data: new Date().toLocaleString(),
                     titulo: tituloProvaInput.value,
                     totalQuestoes: numQuestoes,
+                    totalAlternativas: numAlternativas,
                     acertos: acertos,
                     nota: nota.toFixed(1),
+                    percentual: percentual.toFixed(1),
                     detalhes: detalhes,
                     respostasAluno: respostasAluno,
-                    gabarito: gabarito
+                    gabarito: gabarito,
+                    estatisticas: estatisticas
                 };
+                
+                // Rolagem automática para o resultado
+                resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             };
             img.src = currentImageData;
         } catch (err) {
             logArea.innerHTML += `\n❌ Erro: ${err}`;
+            alert(`Erro na correção: ${err}\n\nTente tirar uma foto com melhor iluminação e enquadramento.`);
         }
     }
 
@@ -633,10 +769,15 @@
             let res = (gab === resp) ? "Acertou" : (resp !== "-" ? "Errou" : "Não detectado");
             csvRows.push([i, gab, resp, res]);
         }
+        csvRows.push(["", "", "", ""]);
         csvRows.push(["Total Acertos", ultimaCorrecao.acertos, "", ""]);
+        csvRows.push(["Total Questões", ultimaCorrecao.totalQuestoes, "", ""]);
         csvRows.push(["Nota", ultimaCorrecao.nota, "", ""]);
-        const csvContent = csvRows.map(row => row.join(",")).join("\n");
-        const blob = new Blob([csvContent], {type: "text/csv;charset=utf-8;"});
+        csvRows.push(["Percentual", ultimaCorrecao.percentual + "%", "", ""]);
+        csvRows.push(["Data", ultimaCorrecao.data, "", ""]);
+        
+        const csvContent = csvRows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csvContent], {type: "text/csv;charset=utf-8;"});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -652,11 +793,19 @@
     fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
     corrigirBtn.addEventListener('click', executarCorrecao);
     resetGabaritoBtn.addEventListener('click', restaurarGabaritoExemplo);
+    validarGabaritoBtn.addEventListener('click', validarPreenchimentoGabarito);
     btnAplicarConfig.addEventListener('click', () => { atualizarCartao(); logArea.innerHTML += "\n⚙️ Configurações aplicadas."; });
     btnImprimirCartao.addEventListener('click', () => {
         let conteudo = document.getElementById('printArea').innerHTML;
         let win = window.open('', '_blank');
-        win.document.write(`<html><head><title>Cartão de Respostas</title><style>@media print{ body{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;} .marcador{background:#000 !important;} } .marcador{width:22px;height:22px;background:#000;border:1px solid #000;}</style></head><body>${conteudo}</body></html>`);
+        win.document.write(`<html><head><title>Cartão de Respostas</title><style>
+            @media print{ 
+                body{-webkit-print-color-adjust:exact !important; print-color-adjust:exact !important;} 
+                .marcador{background:#000 !important;} 
+            } 
+            .marcador{width:22px;height:22px;background:#000;border:1px solid #000;}
+            body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+        </style></head><body>${conteudo}</body></html>`);
         win.document.close();
         win.print();
     });
