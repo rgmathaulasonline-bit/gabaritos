@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Corretor de Provas - Estável com Correção de Inclinação</title>
+    <title>Corretor Profissional com Marcadores (Estilo ENEM)</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #eef2f5; margin: 0; padding: 20px; }
-        .container { max-width: 1300px; margin: 0 auto; background: white; border-radius: 32px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 32px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h1 { margin-top: 0; color: #0f172a; }
         .config-panel { background: #f8fafc; border-radius: 24px; padding: 20px; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 25px; align-items: flex-end; border: 1px solid #e2e8f0; }
         .config-item { display: flex; flex-direction: column; gap: 6px; }
@@ -32,20 +32,20 @@
         .result-area { background: #eef2ff; border-radius: 24px; padding: 18px; text-align: center; margin-top: 20px; }
         .score { font-size: 2.5rem; font-weight: 800; color: #1e40af; }
         .log { background: #1e293b; color: #cbd5e6; border-radius: 20px; padding: 14px; font-family: monospace; font-size: 0.8rem; max-height: 250px; overflow-y: auto; margin-top: 20px; }
-        .loading { color: #eab308; font-weight: bold; }
+        .btn-export { background: #8b5cf6; margin-left: 10px; }
+        .btn-export:hover { background: #7c3aed; }
         @media print { body { background: white; padding: 0; margin: 0; } .container { padding: 0; box-shadow: none; } .no-print { display: none !important; } .print-area { margin: 0; padding: 0.5cm; } }
     </style>
-    <!-- CDN alternativo e mais estável do OpenCV -->
-    <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha ao carregar OpenCV via jsdelivr'); document.getElementById('logArea').innerHTML += '❌ ERRO: CDN do OpenCV não carregou. Recarregue a página.'"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha ao carregar OpenCV'); document.getElementById('logArea').innerHTML += '❌ ERRO: OpenCV não carregou. Recarregue.'"></script>
 </head>
 <body>
 <div class="container">
-    <h1>📋 Corretor Inteligente com Correção de Inclinação</h1>
+    <h1>📋 Corretor Profissional (Marcadores + Perspectiva)</h1>
 
     <div class="config-panel no-print">
         <div class="config-item">
             <label>✏️ Título da Prova</label>
-            <input type="text" id="tituloProva" value="Avaliação">
+            <input type="text" id="tituloProva" value="Simulado ENEM">
         </div>
         <div class="config-item">
             <label>🔢 Número de questões</label>
@@ -67,6 +67,8 @@
     <div id="printArea" class="print-area" style="background: white; padding: 20px; border-radius: 16px; margin-bottom: 25px;"></div>
     <div class="no-print" style="text-align: center; margin-bottom: 20px;">
         <button id="btnImprimirCartao">🖨️ Imprimir cartão</button>
+        <button id="btnExportarJSON" class="btn-export">📥 Exportar JSON</button>
+        <button id="btnExportarCSV" class="btn-export">📊 Exportar CSV</button>
     </div>
 
     <div class="two-columns no-print">
@@ -90,7 +92,7 @@
             <div class="card">
                 <div class="section-title">✅ Gabarito Oficial</div>
                 <div id="gabaritoDinamico" class="gabarito-grid"></div>
-                <button id="resetGabaritoBtn" class="btn-secondary" style="margin-top: 16px;">Restaurar exemplo (A,B,C... cíclico)</button>
+                <button id="resetGabaritoBtn" class="btn-secondary" style="margin-top: 16px;">Restaurar exemplo (cíclico)</button>
             </div>
             <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem;">✨ CORRIGIR PROVA</button>
             <div id="resultArea" class="result-area" style="display:none;">
@@ -102,7 +104,7 @@
     </div>
 
     <div class="log no-print" id="logArea">
-        ⏳ Aguardando OpenCV.js carregar... (pode levar alguns segundos na primeira vez)
+        ⏳ Aguardando OpenCV.js carregar...
     </div>
 </div>
 
@@ -111,10 +113,11 @@
     let currentImageData = null;
     let numQuestoes = 10;
     let numAlternativas = 5;
-    let letras = ['A','B','C','D','E','F'];
+    let letras = ['A','B','C','D','E','F','G','H'];
     let cvReady = false;
     let cameraActive = true;
     let stream = null;
+    let ultimaCorrecao = null;  // guarda último resultado para exportação
 
     // Elementos DOM
     const video = document.getElementById('video');
@@ -134,12 +137,14 @@
     const tituloProvaInput = document.getElementById('tituloProva');
     const numQuestoesInput = document.getElementById('numQuestoes');
     const numAlternativasSelect = document.getElementById('numAlternativas');
+    const btnExportarJSON = document.getElementById('btnExportarJSON');
+    const btnExportarCSV = document.getElementById('btnExportarCSV');
 
-    // ---------- ESPERA ATIVA PELO OpenCV (POLLING) ----------
+    // ---------- ESPERA ATIVA PELO OpenCV ----------
     function esperarOpenCV() {
         if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
             cvReady = true;
-            logArea.innerHTML = "✅ OpenCV.js carregado com sucesso! Agora você pode corrigir provas.";
+            logArea.innerHTML = "✅ OpenCV.js carregado! Detecção de marcadores e perspectiva ativa.";
         } else {
             logArea.innerHTML = "⏳ Carregando OpenCV... (verificando a cada 500ms)";
             setTimeout(esperarOpenCV, 500);
@@ -147,7 +152,7 @@
     }
     esperarOpenCV();
 
-    // ---------- CÂMERA (com controle liga/desliga) ----------
+    // ---------- CÂMERA ----------
     async function iniciarCamera() {
         if (stream) stream.getTracks().forEach(t => t.stop());
         try {
@@ -156,7 +161,6 @@
             await video.play();
             cameraActive = true;
             toggleCameraBtn.textContent = "🔴 Desligar Câmera";
-            logArea.innerHTML += "\n📷 Câmera ligada.";
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -165,7 +169,7 @@
                 cameraActive = true;
                 toggleCameraBtn.textContent = "🔴 Desligar Câmera";
             } catch (e) {
-                logArea.innerHTML += "\n❌ Erro ao acessar câmera. Use o upload de imagem.";
+                logArea.innerHTML += "\n❌ Erro na câmera. Use upload.";
                 cameraActive = false;
                 toggleCameraBtn.textContent = "🟢 Ligar Câmera";
             }
@@ -176,14 +180,13 @@
         if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; video.srcObject = null; }
         cameraActive = false;
         toggleCameraBtn.textContent = "🟢 Ligar Câmera";
-        logArea.innerHTML += "\n📴 Câmera desligada.";
     }
 
     function toggleCamera() { cameraActive ? desligarCamera() : iniciarCamera(); }
 
     function capturarFoto() {
         if (!video.videoWidth || !cameraActive) {
-            logArea.innerHTML += "\n⚠️ Câmera não está ativa. Ligue a câmera primeiro.";
+            logArea.innerHTML += "\n⚠️ Câmera não ativa. Ligue primeiro.";
             return;
         }
         canvas.width = video.videoWidth;
@@ -197,7 +200,7 @@
             resultCanvas.getContext('2d').drawImage(img, 0, 0);
         };
         img.src = currentImageData;
-        logArea.innerHTML += "\n📸 Foto capturada. Agora clique em CORRIGIR PROVA.";
+        logArea.innerHTML += "\n📸 Foto capturada. Clique em CORRIGIR.";
     }
 
     function carregarUpload(file) {
@@ -218,19 +221,27 @@
         reader.readAsDataURL(file);
     }
 
-    // ---------- GERAÇÃO DO CARTÃO E GABARITO ----------
+    // ---------- GERAÇÃO DO CARTÃO COM MARCADORES (4 QUADRADOS PRETOS) ----------
     function gerarCartaoHTML(titulo, qtd, altCount) {
         let letrasUsadas = letras.slice(0, altCount);
-        return `<div style="font-family: Arial, sans-serif;">
+        // Marcadores absolutos nos 4 cantos (10px de distância da borda)
+        return `
+        <div style="position: relative; font-family: Arial, sans-serif; background: white; padding: 20px; border: 1px solid #ccc;">
+            <!-- MARCADORES PRETOS -->
+            <div style="position: absolute; top: 10px; left: 10px; width: 22px; height: 22px; background: black; border: 1px solid #333;"></div>
+            <div style="position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; background: black; border: 1px solid #333;"></div>
+            <div style="position: absolute; bottom: 10px; left: 10px; width: 22px; height: 22px; background: black; border: 1px solid #333;"></div>
+            <div style="position: absolute; bottom: 10px; right: 10px; width: 22px; height: 22px; background: black; border: 1px solid #333;"></div>
+
             <h2 style="text-align: center;">${titulo}</h2>
             <p><strong>NOME:</strong> _________________ &nbsp; <strong>DATA:</strong> ___/___/___ &nbsp; <strong>TURMA:</strong> _______</p>
             <p><strong>Total questões:</strong> ${qtd} &nbsp; | &nbsp; <strong>Alternativas:</strong> ${letrasUsadas.join(', ')}</p>
             <p><em>Instrução: PINTE COMPLETAMENTE a bolinha da alternativa com caneta AZUL ou PRETA.</em></p>
             <table style="border-collapse: collapse; width: 100%; border: 1px solid #000;">
                 <thead><tr style="background:#eee;"><th style="border:1px solid #000; padding:10px;">Questão</th>${letrasUsadas.map(l => `<th style="border:1px solid #000; padding:10px;">${l}</th>`).join('')}</tr></thead>
-                <tbody>${Array.from({length: qtd}, (_,i) => `<tr><td style="border:1px solid #000; text-align:center; padding:12px;">${i+1}</td>${letrasUsadas.map(() => `<td style="border:1px solid #000; text-align:center;"><span class="bolinha-print" style="display:inline-block; width:28px; height:28px; border-radius:50%; border:2px solid black; background:white;"></span></td>`).join('')}</tr>`).join('')}</tbody>
+                <tbody>${Array.from({length: qtd}, (_,i) => `<tr><td style="border:1px solid #000; text-align:center; padding:12px;">${i+1}</td>${letrasUsadas.map(() => `<td style="border:1px solid #000; text-align:center;"><span style="display:inline-block; width:28px; height:28px; border-radius:50%; border:2px solid black; background:white;"></span></td>`).join('')}</tr>`).join('')}</tbody>
             </table>
-            <p style="font-size:12px; text-align:center;">Sistema de correção automática - fotografe esta folha preenchida.</p>
+            <p style="font-size:12px; text-align:center;">Sistema de correção automática - mantenha os 4 cantos visíveis na foto.</p>
         </div>`;
     }
 
@@ -269,16 +280,14 @@
     }
 
     function obterGabaritoDaTela() {
-        let gabaritoLido = {};
+        let gabarito = {};
         const selects = document.querySelectorAll('#gabaritoDinamico select');
         selects.forEach((select, index) => {
             let questao = Math.floor(index / numAlternativas) + 1;
             let valor = select.value;
-            if (valor && valor !== "") {
-                gabaritoLido[questao] = valor;
-            }
+            if (valor && valor !== "") gabarito[questao] = valor;
         });
-        return gabaritoLido;
+        return gabarito;
     }
 
     function restaurarGabaritoExemplo() {
@@ -286,62 +295,135 @@
         const selects = document.querySelectorAll('#gabaritoDinamico select');
         selects.forEach((select, index) => {
             let questao = Math.floor(index / numAlternativas) + 1;
-            let valorExemplo = letrasUsadas[(questao-1) % letrasUsadas.length];
-            select.value = valorExemplo;
+            select.value = letrasUsadas[(questao-1) % letrasUsadas.length];
         });
-        logArea.innerHTML += "\n🔄 Gabarito exemplo carregado (alternativa cíclica).";
+        logArea.innerHTML += "\n🔄 Gabarito exemplo cíclico carregado.";
     }
 
-    // ---------- CORREÇÃO DE INCLINAÇÃO (DESKEW) E DETECÇÃO DE CÍRCULOS ----------
-    function deskewImage(srcMat) {
-        // Detecta bordas e calcula ângulo de rotação
-        let gray = new cv.Mat();
-        cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY, 0);
-        let edges = new cv.Mat();
-        cv.Canny(gray, edges, 50, 150, 3);
-        let lines = new cv.Mat();
-        cv.HoughLines(edges, lines, 1, Math.PI/180, 100);
+    // -------------------- NOVAS FUNÇÕES: MARCADORES E PERSPECTIVA --------------------
+    function encontrarMarcadores(gray) {
+        // Binariza para encontrar os quadrados pretos
+        let thresh = new cv.Mat();
+        cv.threshold(gray, thresh, 200, 255, cv.THRESH_BINARY_INV);
         
-        let angles = [];
-        for (let i = 0; i < lines.rows; i++) {
-            let rho = lines.data32F[i*2];
-            let theta = lines.data32F[i*2+1];
-            let angle = theta * 180 / Math.PI;
-            if (angle < 45 || angle > 135) angles.push(angle);
-        }
-        let medianAngle = 0;
-        if (angles.length > 0) {
-            angles.sort((a,b) => a-b);
-            medianAngle = angles[Math.floor(angles.length/2)];
-        }
-        let rotation = medianAngle - 90;
-        if (Math.abs(rotation) < 2) return srcMat.clone(); // não precisa rotacionar
+        let contours = new cv.MatVector();
+        let hierarchy = new cv.Mat();
+        cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
         
-        let center = new cv.Point(srcMat.cols/2, srcMat.rows/2);
-        let rotMat = cv.getRotationMatrix2D(center, rotation, 1.0);
+        let marcadores = [];
+        for (let i = 0; i < contours.size(); i++) {
+            let cnt = contours.get(i);
+            let rect = cv.boundingRect(cnt);
+            let area = rect.width * rect.height;
+            // Filtro: área entre 300 e 5000 pixels, formato aproximadamente quadrado
+            if (area > 300 && area < 5000) {
+                let ratio = rect.width / rect.height;
+                if (ratio > 0.7 && ratio < 1.3) {
+                    marcadores.push({
+                        x: rect.x,
+                        y: rect.y,
+                        w: rect.width,
+                        h: rect.height,
+                        centerX: rect.x + rect.width/2,
+                        centerY: rect.y + rect.height/2
+                    });
+                }
+            }
+            cnt.delete();
+        }
+        thresh.delete();
+        contours.delete();
+        hierarchy.delete();
+        
+        // Ordena por posição para identificar os 4 cantos: superior esquerdo, superior direito, inferior esquerdo, inferior direito
+        if (marcadores.length >= 4) {
+            marcadores.sort((a,b) => a.centerY - b.centerY);
+            let top = marcadores.slice(0,2).sort((a,b)=>a.centerX - b.centerX);
+            let bottom = marcadores.slice(2,4).sort((a,b)=>a.centerX - b.centerX);
+            if (top.length===2 && bottom.length===2) {
+                return [top[0], top[1], bottom[0], bottom[1]];
+            }
+        }
+        return marcadores.slice(0,4);
+    }
+
+    function aplicarPerspectiva(src, marcadores) {
+        if (marcadores.length !== 4) return src.clone();
+        
+        // Pontos de origem (os cantos dos marcadores na imagem)
+        let ptsSrc = cv.matFromArray(4, 1, cv.CV_32FC2, [
+            marcadores[0].centerX, marcadores[0].centerY,
+            marcadores[1].centerX, marcadores[1].centerY,
+            marcadores[2].centerX, marcadores[2].centerY,
+            marcadores[3].centerX, marcadores[3].centerY
+        ]);
+        
+        // Pontos de destino (retângulo normalizado)
+        let width = src.cols;
+        let height = src.rows;
+        let ptsDst = cv.matFromArray(4, 1, cv.CV_32FC2, [
+            0, 0,
+            width, 0,
+            0, height,
+            width, height
+        ]);
+        
+        let M = cv.getPerspectiveTransform(ptsSrc, ptsDst);
         let dst = new cv.Mat();
-        cv.warpAffine(srcMat, dst, rotMat, new cv.Size(srcMat.cols, srcMat.rows), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255,255,255));
-        gray.delete(); edges.delete(); lines.delete(); rotMat.delete();
+        cv.warpPerspective(src, dst, M, new cv.Size(width, height), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255,255,255));
+        
+        ptsSrc.delete(); ptsDst.delete(); M.delete();
         return dst;
     }
 
+    // Melhoria de contraste para fotos com sombra
+    function equalizarContraste(gray) {
+        let equalized = new cv.Mat();
+        cv.equalizeHist(gray, equalized);
+        return equalized;
+    }
+
+    // Função de detecção de círculos (original melhorada)
     async function detectarRespostasComPontos(imageBase64) {
         return new Promise((resolve, reject) => {
-            if (!cvReady) reject("OpenCV não carregou ainda.");
+            if (!cvReady) reject("OpenCV não carregado.");
             let img = new Image();
             img.onload = () => {
                 try {
                     let src = cv.imread(img);
-                    // Aplica correção de inclinação
-                    let deskewed = deskewImage(src);
                     let gray = new cv.Mat();
-                    cv.cvtColor(deskewed, gray, cv.COLOR_RGBA2GRAY, 0);
+                    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
                     
+                    // ---- ETAPA 1: DETECTAR MARCADORES E APLICAR PERSPECTIVA ----
+                    let marcadores = encontrarMarcadores(gray);
+                    let corrigiuPerspectiva = false;
+                    if (marcadores.length === 4) {
+                        logArea.innerHTML += "\n🔲 4 marcadores detectados! Aplicando correção de perspectiva...";
+                        let srcWarp = aplicarPerspectiva(src, marcadores);
+                        src.delete();
+                        src = srcWarp;
+                        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+                        corrigiuPerspectiva = true;
+                    } else {
+                        logArea.innerHTML += `\n⚠️ Marcadores insuficientes (${marcadores.length}/4). Usando correção de inclinação (fallback).`;
+                        // Fallback: deskew simples (já existente)
+                        let deskewed = deskewImage(src);
+                        src.delete();
+                        src = deskewed;
+                        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
+                    }
+                    
+                    // Equalização de contraste (ajuda com sombras)
+                    let grayEq = equalizarContraste(gray);
+                    gray.delete();
+                    gray = grayEq;
+                    
+                    // Detecção de círculos (Hough)
                     let circles = new cv.Mat();
                     cv.HoughCircles(gray, circles, cv.HOUGH_GRADIENT, 1, 30, 100, 30, 8, 25);
                     if (circles.cols === 0) {
-                        src.delete(); deskewed.delete(); gray.delete(); circles.delete();
-                        reject("Nenhum círculo detectado. Tente uma foto mais reta e com boa iluminação.");
+                        src.delete(); gray.delete(); circles.delete();
+                        reject("Nenhum círculo detectado. Verifique iluminação e enquadramento.");
                         return;
                     }
                     
@@ -352,7 +434,7 @@
                         let r = circles.data32F[i*3+2];
                         circleData.push({ x, y, r });
                     }
-                    // Ordena por Y (linha) e depois por X (coluna)
+                    // Agrupar por linhas (Y)
                     circleData.sort((a,b) => a.y - b.y);
                     let rows = [];
                     let thresholdY = 25;
@@ -370,16 +452,17 @@
                     }
                     for (let row of rows) row.circles.sort((a,b) => a.x - b.x);
                     
-                    // Filtra linhas que têm aproximadamente o número esperado de colunas
-                    let validRows = rows.filter(row => row.circles.length >= numAlternativas - 1 && row.circles.length <= numAlternativas + 1);
+                    // Filtrar linhas com número esperado de colunas
+                    let validRows = rows.filter(row => Math.abs(row.circles.length - numAlternativas) <= 1);
                     if (validRows.length < numQuestoes - 2 || validRows.length > numQuestoes + 2) {
-                        src.delete(); deskewed.delete(); gray.delete(); circles.delete();
-                        reject(`Detectadas ${validRows.length} linhas de círculos, esperado ~${numQuestoes}. Tente enquadrar melhor.`);
+                        src.delete(); gray.delete(); circles.delete();
+                        reject(`Detectadas ${validRows.length} linhas de círculos, esperado ~${numQuestoes}. Tente enquadrar melhor a folha inteira.`);
                         return;
                     }
                     let questoesLinhas = validRows.slice(0, numQuestoes);
                     let respostas = {};
                     let circlesPositions = {};
+                    
                     for (let idx = 0; idx < questoesLinhas.length; idx++) {
                         let row = questoesLinhas[idx];
                         let circlesRow = row.circles.slice(0, numAlternativas);
@@ -401,10 +484,11 @@
                             }
                         }
                     }
-                    src.delete(); deskewed.delete(); gray.delete(); circles.delete();
+                    src.delete(); gray.delete(); circles.delete();
                     resolve({ 
                         respostas: Object.fromEntries(Object.entries(respostas).map(([k,v]) => [k, v.alt])),
-                        circlesPositions 
+                        circlesPositions,
+                        perspectivaAplicada: corrigiuPerspectiva
                     });
                 } catch (err) {
                     reject("Erro no processamento: " + err.message);
@@ -414,24 +498,55 @@
         });
     }
 
+    // Fallback deskew (inclinação simples) - já existente
+    function deskewImage(srcMat) {
+        let gray = new cv.Mat();
+        cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
+        let edges = new cv.Mat();
+        cv.Canny(gray, edges, 50, 150, 3);
+        let lines = new cv.Mat();
+        cv.HoughLines(edges, lines, 1, Math.PI/180, 100);
+        let angles = [];
+        for (let i = 0; i < lines.rows; i++) {
+            let theta = lines.data32F[i*2+1];
+            let angle = theta * 180 / Math.PI;
+            if (angle < 45 || angle > 135) angles.push(angle);
+        }
+        let medianAngle = 0;
+        if (angles.length > 0) {
+            angles.sort((a,b)=>a-b);
+            medianAngle = angles[Math.floor(angles.length/2)];
+        }
+        let rotation = medianAngle - 90;
+        if (Math.abs(rotation) < 2) return srcMat.clone();
+        let center = new cv.Point(srcMat.cols/2, srcMat.rows/2);
+        let rotMat = cv.getRotationMatrix2D(center, rotation, 1.0);
+        let dst = new cv.Mat();
+        cv.warpAffine(srcMat, dst, rotMat, new cv.Size(srcMat.cols, srcMat.rows), cv.INTER_LINEAR, cv.BORDER_CONSTANT, new cv.Scalar(255,255,255));
+        gray.delete(); edges.delete(); lines.delete(); rotMat.delete();
+        return dst;
+    }
+
+    // ---------- CORREÇÃO PRINCIPAL ----------
     async function executarCorrecao() {
         if (!currentImageData) {
-            logArea.innerHTML += "\n⚠️ Nenhuma imagem capturada. Tire uma foto ou faça upload.";
+            logArea.innerHTML += "\n⚠️ Nenhuma imagem. Tire foto ou faça upload.";
             return;
         }
-        const gabaritoLido = obterGabaritoDaTela();
-        if (Object.keys(gabaritoLido).length === 0) {
-            logArea.innerHTML += "\n⚠️ Defina o gabarito oficial antes de corrigir (selecione as alternativas corretas na tabela à direita).";
+        const gabarito = obterGabaritoDaTela();
+        if (Object.keys(gabarito).length === 0) {
+            logArea.innerHTML += "\n⚠️ Defina o gabarito oficial na tabela à direita.";
             return;
         }
         if (!cvReady) {
-            logArea.innerHTML += "\n⏳ OpenCV ainda não terminou de carregar. Aguarde alguns segundos e tente novamente.";
+            logArea.innerHTML += "\n⏳ OpenCV ainda carregando. Tente em alguns segundos.";
             return;
         }
-        logArea.innerHTML += "\n🔍 Processando imagem (correção de inclinação + detecção de círculos)...";
+        logArea.innerHTML += "\n🔍 Processando imagem (busca por marcadores + correção de perspectiva)...";
         try {
-            const { respostas: respostasAluno, circlesPositions } = await detectarRespostasComPontos(currentImageData);
+            const { respostas: respostasAluno, circlesPositions, perspectivaAplicada } = await detectarRespostasComPontos(currentImageData);
             logArea.innerHTML += `\n📝 Respostas detectadas: ${JSON.stringify(respostasAluno)}`;
+            if (perspectivaAplicada) logArea.innerHTML += "\n✅ Correção de perspectiva aplicada com sucesso!";
             
             let img = new Image();
             img.onload = () => {
@@ -443,7 +558,7 @@
                 let acertos = 0;
                 let detalhes = [];
                 for (let i = 1; i <= numQuestoes; i++) {
-                    let correta = gabaritoLido[i];
+                    let correta = gabarito[i];
                     let aluno = respostasAluno[i];
                     if (correta && aluno && correta === aluno) {
                         acertos++;
@@ -469,7 +584,19 @@
                 gradeDetail.innerText = `🎓 NOTA: ${nota.toFixed(1)}  (${acertos} acerto${acertos!==1?'s':''})`;
                 resultArea.style.display = 'block';
                 logArea.innerHTML += `\n📊 CORREÇÃO:\n${detalhes.join('\n')}`;
-                logArea.innerHTML += `\n🎉 Total de acertos (pontos verdes): ${acertos}`;
+                logArea.innerHTML += `\n🎉 Total de acertos: ${acertos}`;
+                
+                // Guarda resultado para exportação
+                ultimaCorrecao = {
+                    data: new Date().toLocaleString(),
+                    titulo: tituloProvaInput.value,
+                    totalQuestoes: numQuestoes,
+                    acertos: acertos,
+                    nota: nota.toFixed(1),
+                    detalhes: detalhes,
+                    respostasAluno: respostasAluno,
+                    gabarito: gabarito
+                };
             };
             img.src = currentImageData;
         } catch (err) {
@@ -477,16 +604,50 @@
         }
     }
 
-    // ---------- EVENTOS E INICIALIZAÇÃO ----------
+    // ---------- EXPORTAÇÃO ----------
+    function exportarJSON() {
+        if (!ultimaCorrecao) { alert("Nenhuma correção realizada ainda."); return; }
+        const dataStr = JSON.stringify(ultimaCorrecao, null, 2);
+        const blob = new Blob([dataStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `correcao_${new Date().toISOString().slice(0,19)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        logArea.innerHTML += "\n📄 JSON exportado.";
+    }
+
+    function exportarCSV() {
+        if (!ultimaCorrecao) { alert("Nenhuma correção realizada ainda."); return; }
+        let csvRows = [];
+        csvRows.push(["Questão", "Gabarito", "Resposta Aluno", "Resultado"]);
+        for (let i = 1; i <= numQuestoes; i++) {
+            let gab = ultimaCorrecao.gabarito[i] || "-";
+            let resp = ultimaCorrecao.respostasAluno[i] || "-";
+            let res = (gab === resp) ? "Acertou" : (resp !== "-" ? "Errou" : "Não detectado");
+            csvRows.push([i, gab, resp, res]);
+        }
+        csvRows.push(["Total Acertos", ultimaCorrecao.acertos, "", ""]);
+        csvRows.push(["Nota", ultimaCorrecao.nota, "", ""]);
+        const csvContent = csvRows.map(row => row.join(",")).join("\n");
+        const blob = new Blob([csvContent], {type: "text/csv;charset=utf-8;"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `correcao_${new Date().toISOString().slice(0,19)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        logArea.innerHTML += "\n📊 CSV exportado.";
+    }
+
+    // ---------- EVENTOS ----------
     captureBtn.addEventListener('click', capturarFoto);
     toggleCameraBtn.addEventListener('click', toggleCamera);
     fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
     corrigirBtn.addEventListener('click', executarCorrecao);
     resetGabaritoBtn.addEventListener('click', restaurarGabaritoExemplo);
-    btnAplicarConfig.addEventListener('click', () => {
-        atualizarCartao();
-        logArea.innerHTML += "\n⚙️ Configurações aplicadas. Cartão atualizado. Reconfigure o gabarito se necessário.";
-    });
+    btnAplicarConfig.addEventListener('click', () => { atualizarCartao(); logArea.innerHTML += "\n⚙️ Configurações aplicadas."; });
     btnImprimirCartao.addEventListener('click', () => {
         let conteudo = document.getElementById('printArea').innerHTML;
         let win = window.open('', '_blank');
@@ -494,7 +655,10 @@
         win.document.close();
         win.print();
     });
+    btnExportarJSON.addEventListener('click', exportarJSON);
+    btnExportarCSV.addEventListener('click', exportarCSV);
 
+    // Inicialização
     iniciarCamera();
     atualizarCartao();
 </script>
