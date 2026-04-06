@@ -23,6 +23,8 @@
         .btn-purple { background: #8b5cf6; }
         .btn-purple:hover { background: #7c3aed; }
         .btn-red { background: #ef4444; }
+        .btn-orange { background: #f97316; }
+        .btn-orange:hover { background: #ea580c; }
         
         .two-columns { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 20px; }
         .column { flex: 1; min-width: 300px; }
@@ -175,14 +177,7 @@
         }
         
         .cartao-preview {
-            background: #f1f5f9;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 25px;
-            max-height: 600px;
-            overflow-y: auto;
-            display: flex;
-            justify-content: center;
+            display: none;
         }
         
         .legenda {
@@ -293,6 +288,20 @@
             .no-print { display: none !important; }
             .omr-card { margin: 0; padding: 15px; }
         }
+
+        /* Botões de resultado */
+        .result-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        .btn-nova-prova {
+            background: #f97316;
+        }
+        .btn-nova-prova:hover {
+            background: #ea580c;
+        }
     </style>
     <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha OpenCV'); document.getElementById('logArea').innerHTML += '❌ ERRO: OpenCV não carregou.'"></script>
 </head>
@@ -378,6 +387,9 @@
                     • Ao escanear/tirar foto, clique nos 4 NÚMEROS na imagem (na mesma ordem)<br>
                     • Após marcar os 4 pontos, clique em "CORRIGIR PROVA"
                 </div>
+                
+                <!-- Botão CORRIGIR PROVA movido para dentro do card -->
+                <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem; margin-top: 15px;">✨ CORRIGIR PROVA</button>
             </div>
         </div>
         <div class="column">
@@ -387,12 +399,16 @@
                 <button id="resetGabaritoBtn" class="btn-secondary" style="margin-top: 16px;">🔄 Preencher todas com A</button>
                 <button id="validarGabaritoBtn" class="btn-secondary" style="margin-top: 8px;">✓ Validar preenchimento</button>
             </div>
-            <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem;">✨ CORRIGIR PROVA</button>
+            
+            <!-- Área de resultados movida para depois do gabarito -->
             <div id="resultArea" class="result-area" style="display:none;">
-                <div>🎯 ACERTOS</div>
+                <div>🎯 RESULTADO</div>
                 <div class="score" id="scoreDisplay">0/0</div>
                 <div id="gradeDetail"></div>
                 <div class="stats" id="statsArea"></div>
+                <div class="result-buttons">
+                    <button id="novaProvaBtn" class="btn-nova-prova">📝 CORRIGIR NOVA PROVA</button>
+                </div>
             </div>
         </div>
     </div>
@@ -455,6 +471,7 @@
     const gabaritoStatus = document.getElementById('gabaritoStatus');
     const statsArea = document.getElementById('statsArea');
     const printArea = document.getElementById('printArea');
+    const novaProvaBtn = document.getElementById('novaProvaBtn');
     
     const point1Btn = document.getElementById('point1Btn');
     const point2Btn = document.getElementById('point2Btn');
@@ -476,13 +493,11 @@
     
     // ==================== CÂMERA CORRIGIDA ====================
     async function iniciarCamera() {
-        // Se já tiver uma stream ativa, desliga primeiro
         if (stream) {
             desligarCamera();
         }
         
         try {
-            // Tenta primeiro a câmera traseira (environment)
             stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: { exact: "environment" } } 
             });
@@ -493,7 +508,6 @@
             logArea.innerHTML += "\n📷 Câmera traseira ativada!";
         } catch (err) {
             try {
-                // Se falhar, tenta qualquer câmera disponível
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
                 await video.play();
@@ -510,13 +524,11 @@
     
     function desligarCamera() {
         if (stream) {
-            // Para todas as tracks da stream
             stream.getTracks().forEach(track => {
                 track.stop();
             });
             stream = null;
         }
-        // Limpa o srcObject do vídeo
         if (video) {
             video.srcObject = null;
         }
@@ -699,6 +711,22 @@
         reader.readAsDataURL(file); 
     }
     
+    // Função para resetar apenas a correção (mantém gabarito)
+    function resetarCorrecao() {
+        currentImageData = null;
+        ultimosResultados = null;
+        ultimaImagemWarped = null;
+        resetarPontos();
+        resultArea.style.display = 'none';
+        
+        // Limpa o canvas de resultado
+        const ctx = resultCanvas.getContext('2d');
+        ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+        
+        logArea.innerHTML += "\n🔄 Pronto para corrigir nova prova! O gabarito oficial foi mantido.";
+        alert("Pronto para corrigir nova prova! O gabarito oficial foi mantido.\n\nTire uma nova foto ou envie outra imagem.");
+    }
+    
     // ==================== GERADOR DO CARTÃO ====================
     function gerarCartaoOMR(titulo, qtd, altCount) {
         const letrasUsadas = letras.slice(0, altCount);
@@ -754,7 +782,7 @@
             html += `</tr>`;
         }
         html += `</tbody>
-            </table>
+            }</table>
             
             <div style="text-align: center; font-size: 10px; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; color: #475569;">
                 📂 SISTEMA OMR - Enquadre os 4 NÚMEROS (1,2,3,4) na foto
@@ -916,8 +944,9 @@
             desenharResultadoNaImagem();
             let percentual = (acertos / numQuestoes) * 100;
             scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
-            gradeDetail.innerHTML = `🎓 NOTA: ${(acertos/numQuestoes*10).toFixed(1)} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos !== 1 ? 's' : ''}`;
-            statsArea.innerHTML = `<div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div><div class="stat-item"><div class="stat-value" style="color:#ef4444;">${numQuestoes - acertos}</div><div class="stat-label">Erros/Ñ detectados</div></div><div class="stat-item"><div class="stat-value">${(acertos/numQuestoes*10).toFixed(1)}</div><div class="stat-label">Nota (0-10)</div></div>`;
+            let nota = (acertos/numQuestoes*10).toFixed(1);
+            gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos !== 1 ? 's' : ''}`;
+            statsArea.innerHTML = `<div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div><div class="stat-item"><div class="stat-value" style="color:#ef4444;">${numQuestoes - acertos}</div><div class="stat-label">Erros/Ñ detectados</div></div><div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota (0-10)</div></div>`;
             resultArea.style.display = 'block';
             logArea.innerHTML += `\n\n📊 RESULTADO: ${acertos}/${numQuestoes} ACERTOS (${percentual.toFixed(1)}%)`;
             src.delete(); srcTri.delete(); dstTri.delete(); M.delete(); warped.delete(); gray.delete(); binary.delete();
@@ -930,6 +959,7 @@
     corrigirBtn.addEventListener('click', executarCorrecao);
     btnAplicarConfig.addEventListener('click', atualizarCartaoVisual);
     btnGerarPDF.addEventListener('click', gerarPDF);
+    novaProvaBtn.addEventListener('click', resetarCorrecao);
     
     iniciarCamera();
     atualizarCartaoVisual();
