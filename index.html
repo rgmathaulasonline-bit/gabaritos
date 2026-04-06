@@ -474,23 +474,85 @@
     }
     esperarOpenCV();
     
-    // ==================== CÂMERA ====================
+    // ==================== CÂMERA CORRIGIDA ====================
     async function iniciarCamera() {
-        if (stream) stream.getTracks().forEach(t => t.stop());
+        // Se já tiver uma stream ativa, desliga primeiro
+        if (stream) {
+            desligarCamera();
+        }
+        
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
-            video.srcObject = stream; await video.play(); cameraActive = true;
+            // Tenta primeiro a câmera traseira (environment)
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: { exact: "environment" } } 
+            });
+            video.srcObject = stream;
+            await video.play();
+            cameraActive = true;
             toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+            logArea.innerHTML += "\n📷 Câmera traseira ativada!";
         } catch (err) {
             try {
+                // Se falhar, tenta qualquer câmera disponível
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream; await video.play(); cameraActive = true;
+                video.srcObject = stream;
+                await video.play();
+                cameraActive = true;
                 toggleCameraBtn.textContent = "🔴 Desligar Câmera";
-            } catch (e) { logArea.innerHTML += "\n❌ Erro na câmera."; }
+                logArea.innerHTML += "\n📷 Câmera ativada!";
+            } catch (e) {
+                logArea.innerHTML += "\n❌ Erro ao acessar a câmera: " + e.message;
+                cameraActive = false;
+                toggleCameraBtn.textContent = "🟢 Ligar Câmera";
+            }
         }
     }
-    function desligarCamera() { if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; } cameraActive = false; toggleCameraBtn.textContent = "🟢 Ligar Câmera"; }
-    function toggleCamera() { cameraActive ? desligarCamera() : iniciarCamera(); }
+    
+    function desligarCamera() {
+        if (stream) {
+            // Para todas as tracks da stream
+            stream.getTracks().forEach(track => {
+                track.stop();
+            });
+            stream = null;
+        }
+        // Limpa o srcObject do vídeo
+        if (video) {
+            video.srcObject = null;
+        }
+        cameraActive = false;
+        toggleCameraBtn.textContent = "🟢 Ligar Câmera";
+        logArea.innerHTML += "\n🔴 Câmera desligada.";
+    }
+    
+    function toggleCamera() {
+        if (cameraActive) {
+            desligarCamera();
+        } else {
+            iniciarCamera();
+        }
+    }
+    
+    function capturarFoto() {
+        if (!cameraActive || !stream || !video.videoWidth) {
+            logArea.innerHTML += "\n⚠️ Câmera não está ativa! Clique em 'Ligar Câmera' primeiro.";
+            alert("Câmera não está ativa! Clique em 'Ligar Câmera' primeiro.");
+            return;
+        }
+        
+        if (video.videoWidth === 0 || video.videoHeight === 0) {
+            logArea.innerHTML += "\n⚠️ Aguarde a câmera estabilizar...";
+            alert("Aguarde a câmera estabilizar antes de tirar a foto.");
+            return;
+        }
+        
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        processarImagem(canvas.toDataURL('image/jpeg', 0.9));
+        logArea.innerHTML += "\n📸 Foto capturada!";
+    }
     
     function atualizarBotoesPontos() {
         const botoes = [point1Btn, point2Btn, point3Btn, point4Btn];
@@ -624,9 +686,18 @@
     point4Btn.addEventListener('click', () => selecionarPonto(3));
     resetPointsBtn.addEventListener('click', resetarPontos);
     
-    function processarImagem(imageData) { currentImageData = imageData; resetarPontos(); logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 NÚMEROS (vértices) na imagem."; }
-    function capturarFoto() { if (!video.videoWidth || !cameraActive) return; canvas.width = video.videoWidth; canvas.height = video.videoHeight; canvas.getContext('2d').drawImage(video, 0, 0); processarImagem(canvas.toDataURL('image/jpeg', 0.9)); }
-    function carregarUpload(file) { if (!file) return; const reader = new FileReader(); reader.onload = (e) => processarImagem(e.target.result); reader.readAsDataURL(file); }
+    function processarImagem(imageData) { 
+        currentImageData = imageData; 
+        resetarPontos(); 
+        logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 NÚMEROS (vértices) na imagem."; 
+    }
+    
+    function carregarUpload(file) { 
+        if (!file) return; 
+        const reader = new FileReader(); 
+        reader.onload = (e) => processarImagem(e.target.result); 
+        reader.readAsDataURL(file); 
+    }
     
     // ==================== GERADOR DO CARTÃO ====================
     function gerarCartaoOMR(titulo, qtd, altCount) {
@@ -678,7 +749,7 @@
                 html += `<td style="position: relative; text-align: center; vertical-align: middle;">
                             <div class="circle-omr"></div>
                             ${vertexHtml}
-                          </td>`;
+                           </td>`;
             }
             html += `</tr>`;
         }
