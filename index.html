@@ -10,7 +10,6 @@
         .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 32px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h1 { margin-top: 0; color: #0f172a; font-size: 1.5rem; }
         
-        /* Botão HOME */
         .home-button-container {
             display: flex;
             justify-content: flex-start;
@@ -37,9 +36,6 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .btn-home:active {
-            transform: translateY(0);
-        }
         
         .config-panel { background: #f8fafc; border-radius: 24px; padding: 20px; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 25px; align-items: flex-end; border: 1px solid #e2e8f0; }
         .config-item { display: flex; flex-direction: column; gap: 6px; }
@@ -54,16 +50,13 @@
         .btn-purple { background: #8b5cf6; }
         .btn-purple:hover { background: #7c3aed; }
         .btn-red { background: #ef4444; }
-        .btn-orange { background: #f97316; }
-        .btn-orange:hover { background: #ea580c; }
         
         .two-columns { display: flex; flex-wrap: wrap; gap: 25px; margin-top: 20px; }
         .column { flex: 1; min-width: 300px; }
         .card { background: #f8fafc; border-radius: 24px; padding: 18px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .section-title { font-weight: 700; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
-        video, #imagePreview { width: 100%; border-radius: 20px; background: #0f172a; border: 2px solid #cbd5e1; max-height: 320px; object-fit: contain; }
+        video { width: 100%; border-radius: 20px; background: #0f172a; border: 2px solid #cbd5e1; max-height: 320px; object-fit: contain; }
         
-        /* ÁREA DA IMAGEM ANALISADA - AMPLIADA */
         .resultado-imagem-area {
             order: 3;
         }
@@ -73,13 +66,10 @@
             border: 3px solid #3b82f6; 
             background: #0f172a; 
             cursor: crosshair;
-            min-height: 500px;
-            max-height: 70vh;
+            min-height: 400px;
             object-fit: contain;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         
-        /* CONTÊINER DA IMAGEM COM ZOOM */
         .image-container {
             position: relative;
             background: #0f172a;
@@ -95,13 +85,13 @@
             cursor: crosshair;
         }
         
-        /* BARRA DE ZOOM */
         .zoom-controls {
             display: flex;
             gap: 10px;
             justify-content: center;
             margin-top: 12px;
             margin-bottom: 8px;
+            flex-wrap: wrap;
         }
         .zoom-btn {
             background: #1e293b;
@@ -109,10 +99,7 @@
             font-size: 0.85rem;
             margin: 0;
         }
-        .zoom-btn:hover {
-            background: #334155;
-            transform: none;
-        }
+        .zoom-btn:hover { background: #334155; transform: none; }
         .zoom-value {
             background: #e2e8f0;
             color: #1e293b;
@@ -140,12 +127,11 @@
         .point-btn.active { background: #10b981; transform: scale(1.05); box-shadow: 0 0 0 2px white, 0 0 0 4px #10b981; }
         .point-btn-done { background: #10b981; opacity: 0.7; }
         
-        /* ESTILO DO CARTÃO */
         .omr-card {
             background: white;
             position: relative;
             font-family: 'Segoe UI', 'Arial', sans-serif;
-            padding: 40px 30px 40px 30px;
+            padding: 40px 30px;
             border-radius: 12px;
             border: 1px solid #cbd5e1;
             max-width: 900px;
@@ -159,7 +145,6 @@
             border-radius: 50%;
             border: 2px solid #0f172a;
             background-color: white;
-            position: relative;
         }
         
         .questoes-table {
@@ -167,7 +152,6 @@
             border-collapse: collapse;
             margin: 20px 0;
             font-size: 14px;
-            position: relative;
         }
         .questoes-table th, .questoes-table td {
             border: 1px solid #94a3b8;
@@ -175,10 +159,7 @@
             padding: 10px 5px;
             position: relative;
         }
-        .questoes-table th {
-            background-color: #f1f5f9;
-            font-weight: 600;
-        }
+        .questoes-table th { background-color: #f1f5f9; font-weight: 600; }
         
         .vertex-tl {
             position: absolute;
@@ -195,7 +176,6 @@
             font-weight: bold;
             font-size: 14px;
             border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             z-index: 10;
         }
         .vertex-tr {
@@ -213,7 +193,6 @@
             font-weight: bold;
             font-size: 14px;
             border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             z-index: 10;
         }
         .vertex-br {
@@ -231,7 +210,6 @@
             font-weight: bold;
             font-size: 14px;
             border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             z-index: 10;
         }
         .vertex-bl {
@@ -249,7 +227,6 @@
             font-weight: bold;
             font-size: 14px;
             border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
             z-index: 10;
         }
         
@@ -262,9 +239,7 @@
             font-size: 0.75rem;
         }
         
-        .cartao-preview {
-            display: none;
-        }
+        .cartao-preview { display: none; }
         
         .legenda {
             display: flex;
@@ -275,17 +250,10 @@
             background: #f1f5f9;
             border-radius: 40px;
             font-size: 12px;
+            flex-wrap: wrap;
         }
-        .legenda-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .legenda-cor {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-        }
+        .legenda-item { display: flex; align-items: center; gap: 6px; }
+        .legenda-cor { width: 16px; height: 16px; border-radius: 50%; }
         .legenda-cor.verde { background: #10b981; }
         .legenda-cor.vermelho { background: #ef4444; }
         .legenda-cor.amarelo { background: #eab308; }
@@ -298,16 +266,7 @@
             color: #fff;
             border-radius: 16px;
             margin-bottom: 1.5rem;
-            position: relative;
-            overflow: hidden;
             box-shadow: 0 8px 24px rgba(26, 35, 126, 0.2);
-        }
-        .rg-header-content {
-            position: relative;
-            z-index: 1;
-        }
-        .rg-logo {
-            margin: 1rem 0;
         }
         .rg-logo img {
             width: 80px;
@@ -315,14 +274,11 @@
             border-radius: 50%;
             border: 4px solid #fff;
             object-fit: cover;
-            margin: 0 auto;
         }
         .rg-header-container h1 {
             color: #fff;
             font-size: 1.6rem;
             margin: 0.75rem 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            word-wrap: break-word;
         }
 
         .rg-footer-container {
@@ -332,7 +288,6 @@
             color: #fff;
             border-radius: 16px;
             margin-top: 1.5rem;
-            box-shadow: 0 8px 20px rgba(26, 35, 126, 0.2);
         }
         .rg-instagram-btn {
             background: linear-gradient(135deg, #405de6 0%, #833ab4 100%);
@@ -342,66 +297,17 @@
             border-radius: 30px;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
             margin-top: 1.25rem;
-            min-height: 50px;
-            box-shadow: 0 8px 16px rgba(64, 93, 230, 0.3);
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             gap: 10px;
-            width: 100%;
             max-width: 400px;
             font-weight: 600;
         }
-        .rg-instagram-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(64, 93, 230, 0.4);
-        }
+
+        .result-buttons { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
+        .btn-nova-prova { background: #f97316; }
         
-        @media (min-width: 480px) {
-            .rg-header-container h1 { font-size: 1.8rem; }
-            .rg-logo img { width: 90px; height: 90px; }
-        }
-        @media (min-width: 768px) {
-            .rg-header-container h1 { font-size: 2.2rem; }
-            .rg-logo img { width: 100px; height: 100px; }
-        }
-        
-        @media print {
-            body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            .no-print { display: none !important; }
-            .omr-card { margin: 0; padding: 15px; }
-        }
-
-        .result-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            justify-content: center;
-        }
-        .btn-nova-prova {
-            background: #f97316;
-        }
-        .btn-nova-prova:hover {
-            background: #ea580c;
-        }
-
-        .column-left-order {
-            display: flex;
-            flex-direction: column;
-        }
-        .instrucoes-area {
-            order: 1;
-        }
-        .camera-area {
-            order: 2;
-        }
-        .resultado-imagem-area {
-            order: 3;
-        }
-
-        /* INDICADOR DE PONTO ATUAL MAIOR */
         .ponto-status {
             background: #1e293b;
             color: white;
@@ -412,8 +318,13 @@
             text-align: center;
             margin-top: 10px;
         }
+        
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .config-panel { flex-direction: column; align-items: stretch; }
+        }
     </style>
-    <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha OpenCV'); document.getElementById('logArea').innerHTML += '❌ ERRO: OpenCV não carregou.'"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/opencv.js"></script>
 </head>
 <body>
 
@@ -428,7 +339,7 @@
 
 <div class="container">
     <div class="home-button-container no-print">
-        <a href="https://sites.google.com/view/rgmathprofrayltonguedes/home" target="_blank" rel="noopener noreferrer" class="btn-home">
+        <a href="https://sites.google.com/view/rgmathprofrayltonguedes/home" target="_blank" class="btn-home">
             🏠 HOME
         </a>
     </div>
@@ -462,9 +373,9 @@
     </div>
     
     <div class="two-columns no-print">
-        <div class="column column-left-order">
-            <div class="card instrucoes-area">
-                <div class="section-title">🎯 Clique nos 4 NÚMEROS (vértices) na imagem escaneada:</div>
+        <div class="column">
+            <div class="card">
+                <div class="section-title">🎯 Clique nos 4 NÚMEROS (vértices) na imagem:</div>
                 <div class="point-selector">
                     <button id="point1Btn" class="point-btn">① Vértice 1 (Sup Esq)</button>
                     <button id="point2Btn" class="point-btn">② Vértice 2 (Sup Dir)</button>
@@ -484,9 +395,9 @@
                 </div>
             </div>
             
-            <div class="card camera-area">
+            <div class="card">
                 <div class="section-title">📸 Capturar cartão preenchido</div>
-                <video id="video" autoplay playsinline style="width:100%; border-radius: 20px;"></video>
+                <video id="video" autoplay playsinline></video>
                 <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
                     <button id="captureBtn">📷 Tirar Foto</button>
                     <button id="toggleCameraBtn" class="btn-warning">🔴 Desligar Câmera</button>
@@ -503,17 +414,16 @@
                 </div>
             </div>
             
-            <!-- ÁREA DA IMAGEM ANALISADA - AMPLIADA COM ZOOM -->
             <div class="card resultado-imagem-area">
-                <div class="section-title">🖼️ Clique na imagem para marcar os pontos (Use ZOOM para precisão)</div>
+                <div class="section-title">🖼️ Clique na imagem para marcar os pontos (Use ZOOM)</div>
                 <div class="zoom-controls">
                     <button id="zoomInBtn" class="zoom-btn">🔍 + Aumentar</button>
                     <button id="zoomOutBtn" class="zoom-btn">🔍 - Diminuir</button>
                     <button id="zoomResetBtn" class="zoom-btn">⟳ Resetar Zoom</button>
                     <span id="zoomValue" class="zoom-value">100%</span>
                 </div>
-                <div id="imageContainer" class="image-container" style="overflow: auto; max-height: 70vh;">
-                    <canvas id="resultCanvas" style="cursor: crosshair;"></canvas>
+                <div id="imageContainer" class="image-container">
+                    <canvas id="resultCanvas"></canvas>
                 </div>
                 <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem; margin-top: 15px;">✨ CORRIGIR PROVA</button>
             </div>
@@ -543,7 +453,7 @@
 
 <div class="rg-footer-container no-print">
     <p>© 2023 RG Math - Professor Raylton Guedes</p>
-    <a href="https://www.instagram.com/rgmath_education/" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
+    <a href="https://www.instagram.com/rgmath_education/" target="_blank" style="text-decoration: none;">
         <button class="rg-instagram-btn">
             <span style="font-size: 1.5rem;">📷</span>
             Acompanhe o RG Math no Instagram @rgmath_education
@@ -552,6 +462,7 @@
 </div>
 
 <script>
+    // Variáveis globais
     let currentImageData = null;
     let numQuestoes = 10;
     let numAlternativas = 4;
@@ -572,10 +483,10 @@
     let ultimosResultados = null;
     let ultimaImagemWarped = null;
     
-    // Zoom variables
     let currentZoom = 1;
     let imageWidth = 0, imageHeight = 0;
     
+    // Elementos DOM
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const captureBtn = document.getElementById('captureBtn');
@@ -611,6 +522,7 @@
     const point4Btn = document.getElementById('point4Btn');
     const resetPointsBtn = document.getElementById('resetPointsBtn');
     
+    // Aguardar OpenCV
     function esperarOpenCV() {
         if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
             cvReady = true;
@@ -622,6 +534,7 @@
     }
     esperarOpenCV();
     
+    // Câmera
     async function iniciarCamera() {
         if (stream) desligarCamera();
         try {
@@ -630,6 +543,7 @@
             await video.play();
             cameraActive = true;
             toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+            logArea.innerHTML += "\n📷 Câmera traseira ativada!";
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -637,6 +551,7 @@
                 await video.play();
                 cameraActive = true;
                 toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+                logArea.innerHTML += "\n📷 Câmera ativada!";
             } catch (e) {
                 logArea.innerHTML += "\n❌ Erro ao acessar a câmera: " + e.message;
             }
@@ -658,18 +573,56 @@
         else iniciarCamera();
     }
     
+    // Capturar foto
     function capturarFoto() {
         if (!cameraActive || !stream || !video.videoWidth) {
             alert("Câmera não está ativa!");
             return;
         }
+        
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        processarImagem(canvas.toDataURL('image/jpeg', 0.9));
+        const imageDataURL = canvas.toDataURL('image/jpeg', 0.9);
+        processarImagem(imageDataURL);
+        logArea.innerHTML += "\n📸 Foto capturada!";
     }
     
+    // Processar imagem
+    function processarImagem(imageData) { 
+        currentImageData = imageData; 
+        resetarPontos(); 
+        
+        let img = new Image();
+        img.onload = () => {
+            imageWidth = img.width;
+            imageHeight = img.height;
+            resultCanvas.width = img.width;
+            resultCanvas.height = img.height;
+            const ctx = resultCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            currentZoom = 1;
+            applyZoom();
+            
+            logArea.innerHTML += "\n✅ Imagem carregada! Clique nos 4 vértices numerados.";
+        };
+        img.onerror = () => {
+            logArea.innerHTML += "\n❌ Erro ao carregar imagem!";
+            alert("Erro ao processar a imagem. Tente novamente.");
+        };
+        img.src = imageData;
+    }
+    
+    function carregarUpload(file) { 
+        if (!file) return; 
+        const reader = new FileReader(); 
+        reader.onload = (e) => processarImagem(e.target.result); 
+        reader.readAsDataURL(file); 
+    }
+    
+    // Pontos
     function atualizarBotoesPontos() {
         const botoes = [point1Btn, point2Btn, point3Btn, point4Btn];
         botoes.forEach((btn, idx) => {
@@ -728,20 +681,6 @@
         img.src = currentImageData;
     }
     
-    function processarImagem(imageData) { 
-        currentImageData = imageData; 
-        resetarPontos(); 
-        desenharImagemAtual();
-        logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 NÚMEROS (vértices) na imagem."; 
-    }
-    
-    function carregarUpload(file) { 
-        if (!file) return; 
-        const reader = new FileReader(); 
-        reader.onload = (e) => processarImagem(e.target.result); 
-        reader.readAsDataURL(file); 
-    }
-    
     function resetarPontos() {
         pontos = [{ x: 0.05, y: 0.05 }, { x: 0.95, y: 0.05 }, { x: 0.95, y: 0.95 }, { x: 0.05, y: 0.95 }];
         pontoAtual = 0;
@@ -751,20 +690,7 @@
         currentZoom = 1;
         atualizarBotoesPontos();
         if (currentImageData) desenharImagemAtual();
-        logArea.innerHTML += "\n🔄 Pontos resetados! Clique nos 4 números (vértices) na imagem.";
-    }
-    
-    function resetarCorrecao() {
-        currentImageData = null;
-        ultimosResultados = null;
-        ultimaImagemWarped = null;
-        resetarPontos();
-        resultArea.style.display = 'none';
-        const ctx = resultCanvas.getContext('2d');
-        ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
-        resultCanvas.style.width = '100%';
-        logArea.innerHTML += "\n🔄 Pronto para corrigir nova prova!";
-        alert("Pronto para corrigir nova prova! O gabarito oficial foi mantido.");
+        logArea.innerHTML += "\n🔄 Pontos resetados!";
     }
     
     function selecionarPonto(indice) {
@@ -775,14 +701,12 @@
         }
         pontoAtual = indice;
         atualizarBotoesPontos();
-        logArea.innerHTML += `\n🎯 Editando vértice ${indice+1}`;
         if (currentImageData) desenharImagemAtual();
     }
     
+    // Clique no canvas
     resultCanvas.addEventListener('click', (e) => {
         if (!currentImageData) { alert("Carregue uma imagem primeiro!"); return; }
-        ultimosResultados = null;
-        ultimaImagemWarped = null;
         
         const rect = resultCanvas.getBoundingClientRect();
         const scaleX = resultCanvas.width / rect.width;
@@ -800,54 +724,12 @@
         while (nextPoint !== pontoAtual && pontosDefinidos[nextPoint]) nextPoint = (nextPoint + 1) % 4;
         pontoAtual = nextPoint;
         
-        const nomes = ['① Vértice 1 (Sup Esq)', '② Vértice 2 (Sup Dir)', '③ Vértice 3 (Inf Dir)', '④ Vértice 4 (Inf Esq)'];
-        logArea.innerHTML += `\n📍 ${nomes[pontoAtual === 0 ? 3 : pontoAtual-1]} definido! (${Math.round(pontos[pontoAtual === 0 ? 3 : pontoAtual-1].x*100)}%, ${Math.round(pontos[pontoAtual === 0 ? 3 : pontoAtual-1].y*100)}%)`;
-        
+        logArea.innerHTML += `\n✅ Vértice ${pontoAtual === 0 ? 4 : pontoAtual} definido!`;
         atualizarBotoesPontos();
         desenharImagemAtual();
     });
     
-    function desenharResultadoNaImagem() {
-        if (!ultimaImagemWarped) {
-            if (currentImageData) desenharImagemAtual();
-            return;
-        }
-        let img = new Image();
-        img.onload = () => {
-            imageWidth = img.width;
-            imageHeight = img.height;
-            resultCanvas.width = img.width;
-            resultCanvas.height = img.height;
-            const ctx = resultCanvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            if (ultimosResultados) {
-                for (let i = 0; i < ultimosResultados.marcacoes.length; i++) {
-                    const marc = ultimosResultados.marcacoes[i];
-                    let cor = '#eab308';
-                    if (marc.resultado === 'acertou') cor = '#10b981';
-                    else if (marc.resultado === 'errou') cor = '#ef4444';
-                    else if (marc.resultado === 'marcacao_dupla') cor = '#8b5cf6';
-                    
-                    ctx.beginPath();
-                    ctx.arc(marc.x, marc.y, 20, 0, 2 * Math.PI);
-                    ctx.fillStyle = cor + '80';
-                    ctx.fill();
-                    ctx.strokeStyle = cor;
-                    ctx.lineWidth = 3;
-                    ctx.stroke();
-                    ctx.fillStyle = cor;
-                    ctx.font = 'bold 16px Arial';
-                    let texto = marc.marcado;
-                    if (marc.resultado === 'marcacao_dupla') texto = '⚠️' + texto;
-                    ctx.fillText(texto, marc.x-8, marc.y+6);
-                }
-            }
-            applyZoom();
-        };
-        img.src = ultimaImagemWarped;
-    }
-    
-    // Zoom functions
+    // Zoom
     zoomInBtn.addEventListener('click', () => {
         currentZoom = Math.min(currentZoom + 0.25, 3);
         applyZoom();
@@ -861,6 +743,7 @@
         applyZoom();
     });
     
+    // Botões
     point1Btn.addEventListener('click', () => selecionarPonto(0));
     point2Btn.addEventListener('click', () => selecionarPonto(1));
     point3Btn.addEventListener('click', () => selecionarPonto(2));
@@ -869,25 +752,25 @@
     captureBtn.addEventListener('click', capturarFoto);
     toggleCameraBtn.addEventListener('click', toggleCamera);
     fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
-    corrigirBtn.addEventListener('click', executarCorrecao);
-    novaProvaBtn.addEventListener('click', resetarCorrecao);
     
+    // Gerar cartão
     function gerarCartaoOMR(titulo, qtd, altCount) {
         const letrasUsadas = letras.slice(0, altCount);
-        const indexA = 0;
-        const indexD = altCount >= 4 ? 3 : altCount - 1;
         let html = `<div class="omr-card"><h2 style="text-align: center;">${titulo}</h2>
-            <div style="display: flex; justify-content: space-between; margin: 20px 0;"><div><strong>NOME:</strong> _________________________</div>
-            <div><strong>DATA:</strong> ___/___/_____</div><div><strong>TURMA:</strong> ________</div></div>
+            <div style="display: flex; justify-content: space-between; margin: 20px 0;">
+                <div><strong>NOME:</strong> _________________________</div>
+                <div><strong>DATA:</strong> ___/___/_____</div>
+                <div><strong>TURMA:</strong> ________</div>
+            </div>
             <div style="background: #fef3c7; padding: 8px; border-radius: 40px; text-align: center;">📌 PREENCHA COMPLETAMENTE O CÍRCULO</div>
             <table class="questoes-table"><thead><tr><th>Questão</th>${letrasUsadas.map(l => `<th>${l}</th>`).join('')}</tr></thead><tbody>`;
         for (let i = 1; i <= qtd; i++) {
             html += `<tr><td style="font-weight: bold;">${i}</td>`;
             for (let j = 0; j < altCount; j++) {
                 let vertexHtml = "";
-                if (i === 1 && j === indexA) vertexHtml = `<div class="vertex-tl">1</div>`;
-                if (i === 1 && j === indexD) vertexHtml = `<div class="vertex-tr">2</div>`;
-                if (i === qtd && j === altCount - 1) vertexHtml = `<div class="vertex-br">3</div>`;
+                if (i === 1 && j === 0) vertexHtml = `<div class="vertex-tl">1</div>`;
+                if (i === 1 && j === (altCount >= 4 ? 3 : altCount-1)) vertexHtml = `<div class="vertex-tr">2</div>`;
+                if (i === qtd && j === altCount-1) vertexHtml = `<div class="vertex-br">3</div>`;
                 if (i === qtd && j === 0) vertexHtml = `<div class="vertex-bl">4</div>`;
                 html += `<td style="position: relative;"><div class="circle-omr"></div>${vertexHtml}</td>`;
             }
@@ -899,15 +782,12 @@
     
     function atualizarCartaoVisual() {
         let titulo = tituloProvaInput.value.trim() || "Simulado ENEM";
-        numQuestoes = parseInt(numQuestoesInput.value, 10);
-        numAlternativas = parseInt(numAlternativasSelect.value, 10);
-        if (isNaN(numQuestoes)) numQuestoes = 10;
-        if (isNaN(numAlternativas)) numAlternativas = 4;
+        numQuestoes = parseInt(numQuestoesInput.value, 10) || 10;
+        numAlternativas = parseInt(numAlternativasSelect.value, 10) || 4;
         numQuestoes = Math.min(30, Math.max(1, numQuestoes));
         numAlternativas = Math.min(6, Math.max(2, numAlternativas));
         printArea.innerHTML = gerarCartaoOMR(titulo, numQuestoes, numAlternativas);
         gerarInterfaceGabarito();
-        atualizarStatusGabarito();
     }
     
     function gerarPDF() {
@@ -915,17 +795,20 @@
         const titulo = tituloProvaInput.value.trim() || "Gabarito";
         const win = window.open('', '_blank');
         win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
-        <style>.omr-card{position:relative;background:white;padding:40px 30px;border:1px solid #000;max-width:900px;margin:0 auto;}
-        .circle-omr{display:inline-block;width:26px;height:26px;border-radius:50%;border:2px solid #000;background:white;}
-        .questoes-table{width:100%;border-collapse:collapse;margin:20px 0;}.questoes-table th,.questoes-table td{border:1px solid #000;padding:8px;text-align:center;position:relative;}
-        .vertex-tl{position:absolute;top:-10px;left:-10px;background:#10b981;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}
-        .vertex-tr{position:absolute;top:-10px;right:-10px;background:#3b82f6;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-        .vertex-br{position:absolute;bottom:-10px;right:-10px;background:#ef4444;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-        .vertex-bl{position:absolute;bottom:-10px;left:-10px;background:#f59e0b;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+        <style>.omr-card{background:white;padding:40px 30px;border:1px solid #000;max-width:900px;margin:0 auto;}
+        .circle-omr{display:inline-block;width:26px;height:26px;border-radius:50%;border:2px solid #000;}
+        .questoes-table{width:100%;border-collapse:collapse;margin:20px 0;}
+        .questoes-table th,.questoes-table td{border:1px solid #000;padding:8px;text-align:center;position:relative;}
+        .vertex-tl,.vertex-tr,.vertex-br,.vertex-bl{position:absolute;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;color:white;}
+        .vertex-tl{top:-10px;left:-10px;background:#10b981;}
+        .vertex-tr{top:-10px;right:-10px;background:#3b82f6;}
+        .vertex-br{bottom:-10px;right:-10px;background:#ef4444;}
+        .vertex-bl{bottom:-10px;left:-10px;background:#f59e0b;}
         @media print{body{padding:0;}}</style></head><body>${conteudo}<script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script></body></html>`);
         win.document.close();
     }
     
+    // Gabarito
     function gerarInterfaceGabarito() {
         const container = document.getElementById('gabaritoDinamico');
         container.innerHTML = '';
@@ -979,17 +862,26 @@
         atualizarStatusGabarito();
     }
     
-    resetGabaritoBtn.addEventListener('click', preencherTodasA);
-    validarGabaritoBtn.addEventListener('click', () => { const g = obterGabaritoDaTela(); alert(`Gabarito: ${Object.keys(g).length}/${numQuestoes} questões preenchidas`); });
-    btnAplicarConfig.addEventListener('click', atualizarCartaoVisual);
-    btnGerarPDF.addEventListener('click', gerarPDF);
+    function resetarCorrecao() {
+        currentImageData = null;
+        ultimosResultados = null;
+        ultimaImagemWarped = null;
+        resetarPontos();
+        resultArea.style.display = 'none';
+        const ctx = resultCanvas.getContext('2d');
+        ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
+        logArea.innerHTML += "\n🔄 Pronto para nova prova!";
+        alert("Pronto para corrigir nova prova!");
+    }
     
+    // Correção
     async function executarCorrecao() {
-        if (!currentImageData) { alert("Nenhuma imagem."); return; }
+        if (!currentImageData) { alert("Nenhuma imagem. Tire uma foto primeiro!"); return; }
         if (!pontosDefinidos.every(v => v === true)) { alert("Defina os 4 vértices numerados primeiro!"); return; }
         const gabarito = obterGabaritoDaTela();
         if (Object.keys(gabarito).length === 0) { alert("Preencha o gabarito oficial!"); return; }
-        if (!cvReady) { alert("Aguarde OpenCV."); return; }
+        if (!cvReady) { alert("Aguarde OpenCV carregar."); return; }
+        
         logArea.innerHTML += "\n🔍 Corrigindo prova...";
         try {
             let img = new Image(); img.src = currentImageData;
@@ -1003,9 +895,10 @@
             let warped = new cv.Mat(); cv.warpPerspective(src, warped, M, new cv.Size(DW, DH));
             let gray = new cv.Mat(); cv.cvtColor(warped, gray, cv.COLOR_RGBA2GRAY);
             let binary = new cv.Mat(); cv.threshold(gray, binary, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
+            
             const rows = numQuestoes, cols = numAlternativas;
             const cellHeight = Math.floor(DH / rows), cellWidth = Math.floor(DW / cols);
-            let respostasAluno = {}, posicoes = {}, marcacaoConfianca = {};
+            let respostasAluno = {}, posicoes = {};
             
             for (let r = 0; r < rows; r++) {
                 let contagens = [];
@@ -1021,49 +914,52 @@
                 let melhorAlt = contagens.indexOf(maiorCount);
                 let contagensOrdenadas = [...contagens].sort((a,b) => b - a);
                 let segundaMaior = contagensOrdenadas[1] || 0;
-                let status = 'nao_detectado';
-                let letraDetectada = null;
-                if (maiorCount < minFill) status = 'nao_detectado';
-                else if (segundaMaior >= minFill && (maiorCount / (segundaMaior + 1)) < 1.5) status = 'marcacao_dupla';
-                else { status = 'marcado'; letraDetectada = letras[melhorAlt]; respostasAluno[r+1] = letraDetectada; posicoes[r+1] = { x: (melhorAlt * cellWidth) + (cellWidth/2), y: (r * cellHeight) + (cellHeight/2), confianca: maiorCount / areaCell }; }
-                marcacaoConfianca[r+1] = { status, melhorAlt };
+                
+                if (maiorCount >= minFill && !(segundaMaior >= minFill && (maiorCount / (segundaMaior + 1)) < 1.5)) {
+                    let letraDetectada = letras[melhorAlt];
+                    respostasAluno[r+1] = letraDetectada;
+                    posicoes[r+1] = { x: (melhorAlt * cellWidth) + (cellWidth/2), y: (r * cellHeight) + (cellHeight/2) };
+                }
             }
             
-            let acertos = 0, erros = 0, duplas = 0, naoDetectados = 0, marcacoes = [];
+            let acertos = 0, erros = 0;
             for (let i = 1; i <= numQuestoes; i++) {
-                let resultado = 'nao_detectado', marcado = '?', statusMarcacao = marcacaoConfianca[i]?.status || 'nao_detectado';
-                if (statusMarcacao === 'marcado' && respostasAluno[i]) {
-                    marcado = respostasAluno[i];
-                    if (gabarito[i]) {
-                        if (gabarito[i] === respostasAluno[i]) { resultado = 'acertou'; acertos++; }
-                        else { resultado = 'errou'; erros++; }
-                    } else { resultado = 'errou'; erros++; }
-                } else if (statusMarcacao === 'marcacao_dupla') { resultado = 'marcacao_dupla'; marcado = '⚠️ DUPLA'; duplas++; }
-                else { resultado = 'nao_detectado'; marcado = '?'; naoDetectados++; }
-                if (posicoes[i]) marcacoes.push({ x: posicoes[i].x, y: posicoes[i].y, marcado, resultado });
-                else marcacoes.push({ x: (cellWidth * (cols/2)), y: ((i-1)*cellHeight)+(cellHeight/2), marcado: marcado, resultado: resultado });
+                if (respostasAluno[i] && gabarito[i]) {
+                    if (gabarito[i] === respostasAluno[i]) acertos++;
+                    else erros++;
+                } else if (respostasAluno[i]) {
+                    erros++;
+                }
             }
-            
-            ultimosResultados = { marcacoes, acertos, erros, duplas, naoDetectados };
-            let canvasWarp = document.createElement('canvas'); canvasWarp.width = warped.cols; canvasWarp.height = warped.rows;
-            cv.imshow(canvasWarp, warped); ultimaImagemWarped = canvasWarp.toDataURL('image/jpeg', 0.9);
-            desenharResultadoNaImagem();
             
             let percentual = (acertos / numQuestoes) * 100;
             let nota = (acertos/numQuestoes*10).toFixed(1);
+            
             scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
-            gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos !== 1 ? 's' : ''}<br>${erros} erro${erros !== 1 ? 's' : ''}<br>${duplas} marcação(ões) dupla(as)<br>${naoDetectados} não detectado(s)`;
-            statsArea.innerHTML = `<div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
+            gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>${acertos} acerto(s)<br>${erros} erro(s)`;
+            statsArea.innerHTML = `
+                <div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${erros}</div><div class="stat-label">Erros</div></div>
-                <div class="stat-item"><div class="stat-value" style="color:#8b5cf6;">${duplas}</div><div class="stat-label">Duplas/Anuladas</div></div>
-                <div class="stat-item"><div class="stat-value" style="color:#eab308;">${naoDetectados}</div><div class="stat-label">Ñ Detectados</div></div>
                 <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota (0-10)</div></div>`;
+            
             resultArea.style.display = 'block';
-            logArea.innerHTML += `\n\n📊 RESULTADO FINAL: Acertos: ${acertos} | Erros: ${erros} | Duplas: ${duplas} | NOTA: ${nota}`;
+            logArea.innerHTML += `\n📊 RESULTADO: ${acertos}/${numQuestoes} acertos - NOTA: ${nota}`;
+            
             src.delete(); srcTri.delete(); dstTri.delete(); M.delete(); warped.delete(); gray.delete(); binary.delete();
-        } catch(err) { logArea.innerHTML += `\n❌ Erro: ${err.message}`; alert(`Erro: ${err.message}`); }
+        } catch(err) { 
+            logArea.innerHTML += `\n❌ Erro: ${err.message}`; 
+            alert(`Erro: ${err.message}`); 
+        }
     }
     
+    corrigirBtn.addEventListener('click', executarCorrecao);
+    resetGabaritoBtn.addEventListener('click', preencherTodasA);
+    validarGabaritoBtn.addEventListener('click', () => { const g = obterGabaritoDaTela(); alert(`Gabarito: ${Object.keys(g).length}/${numQuestoes} questões preenchidas`); });
+    btnAplicarConfig.addEventListener('click', atualizarCartaoVisual);
+    btnGerarPDF.addEventListener('click', gerarPDF);
+    novaProvaBtn.addEventListener('click', resetarCorrecao);
+    
+    // Inicializar
     iniciarCamera();
     atualizarCartaoVisual();
     atualizarBotoesPontos();
