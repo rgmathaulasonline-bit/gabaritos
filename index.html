@@ -62,7 +62,65 @@
         .card { background: #f8fafc; border-radius: 24px; padding: 18px; border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .section-title { font-weight: 700; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
         video, #imagePreview { width: 100%; border-radius: 20px; background: #0f172a; border: 2px solid #cbd5e1; max-height: 320px; object-fit: contain; }
-        #resultCanvas { width: 100%; border-radius: 20px; border: 2px solid #cbd5e1; background: #0f172a; cursor: crosshair; }
+        
+        /* ÁREA DA IMAGEM ANALISADA - AMPLIADA */
+        .resultado-imagem-area {
+            order: 3;
+        }
+        #resultCanvas { 
+            width: 100%; 
+            border-radius: 20px; 
+            border: 3px solid #3b82f6; 
+            background: #0f172a; 
+            cursor: crosshair;
+            min-height: 500px;
+            max-height: 70vh;
+            object-fit: contain;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        /* CONTÊINER DA IMAGEM COM ZOOM */
+        .image-container {
+            position: relative;
+            background: #0f172a;
+            border-radius: 20px;
+            overflow: auto;
+            max-height: 70vh;
+            border: 3px solid #3b82f6;
+        }
+        .image-container canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            cursor: crosshair;
+        }
+        
+        /* BARRA DE ZOOM */
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 12px;
+            margin-bottom: 8px;
+        }
+        .zoom-btn {
+            background: #1e293b;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            margin: 0;
+        }
+        .zoom-btn:hover {
+            background: #334155;
+            transform: none;
+        }
+        .zoom-value {
+            background: #e2e8f0;
+            color: #1e293b;
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
         
         .gabarito-grid { background: white; border-radius: 20px; border: 1px solid #cbd5e1; overflow-x: auto; }
         .gabarito-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -79,10 +137,10 @@
         
         .point-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; justify-content: center; }
         .point-btn { background: #8b5cf6; font-size: 0.75rem; padding: 5px 10px; margin: 0; }
-        .point-btn.active { background: #10b981; transform: scale(1.05); }
+        .point-btn.active { background: #10b981; transform: scale(1.05); box-shadow: 0 0 0 2px white, 0 0 0 4px #10b981; }
         .point-btn-done { background: #10b981; opacity: 0.7; }
         
-        /* ESTILO DO CARTÃO - SEM OS QUADRADOS PRETOS, COM NÚMEROS NOS VÉRTICES */
+        /* ESTILO DO CARTÃO */
         .omr-card {
             background: white;
             position: relative;
@@ -94,7 +152,6 @@
             margin: 0 auto;
         }
         
-        /* ESTILO DOS CÍRCULOS PARA PREENCHIMENTO */
         .circle-omr {
             display: inline-block;
             width: 26px;
@@ -105,7 +162,6 @@
             position: relative;
         }
         
-        /* TABELA NO ESTILO DA IMAGEM */
         .questoes-table {
             width: 100%;
             border-collapse: collapse;
@@ -124,7 +180,6 @@
             font-weight: 600;
         }
         
-        /* Células especiais para os vértices */
         .vertex-tl {
             position: absolute;
             top: -10px;
@@ -236,7 +291,6 @@
         .legenda-cor.amarelo { background: #eab308; }
         .legenda-cor.roxo { background: #8b5cf6; }
 
-        /* CABEÇALHO RG MATH */
         .rg-header-container {
             text-align: center;
             padding: 1.5rem 1rem;
@@ -271,7 +325,6 @@
             word-wrap: break-word;
         }
 
-        /* RODAPÉ RG MATH */
         .rg-footer-container {
             text-align: center;
             padding: 2rem 1rem;
@@ -321,7 +374,6 @@
             .omr-card { margin: 0; padding: 15px; }
         }
 
-        /* Botões de resultado */
         .result-buttons {
             display: flex;
             gap: 10px;
@@ -335,7 +387,6 @@
             background: #ea580c;
         }
 
-        /* Ordem dos elementos no celular */
         .column-left-order {
             display: flex;
             flex-direction: column;
@@ -349,12 +400,23 @@
         .resultado-imagem-area {
             order: 3;
         }
+
+        /* INDICADOR DE PONTO ATUAL MAIOR */
+        .ponto-status {
+            background: #1e293b;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 10px;
+        }
     </style>
     <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha OpenCV'); document.getElementById('logArea').innerHTML += '❌ ERRO: OpenCV não carregou.'"></script>
 </head>
 <body>
 
-<!-- ========== CABEÇALHO RG MATH ========== -->
 <div class="rg-header-container no-print">
     <div class="rg-header-content">
         <div class="rg-logo">
@@ -365,7 +427,6 @@
 </div>
 
 <div class="container">
-    <!-- BOTÃO HOME ACIMA DO TÍTULO PRINCIPAL, CANTO ESQUERDO -->
     <div class="home-button-container no-print">
         <a href="https://sites.google.com/view/rgmathprofrayltonguedes/home" target="_blank" rel="noopener noreferrer" class="btn-home">
             🏠 HOME
@@ -401,30 +462,28 @@
     </div>
     
     <div class="two-columns no-print">
-        <!-- COLUNA ESQUERDA - Reorganizada -->
         <div class="column column-left-order">
-            <!-- INSTRUÇÕES DOS PONTOS (movido para cima) -->
             <div class="card instrucoes-area">
                 <div class="section-title">🎯 Clique nos 4 NÚMEROS (vértices) na imagem escaneada:</div>
                 <div class="point-selector">
-                    <button id="point1Btn" class="point-btn">① Vértice 1 (Sup Esq - A)</button>
-                    <button id="point2Btn" class="point-btn">② Vértice 2 (Sup Dir - D)</button>
-                    <button id="point3Btn" class="point-btn">③ Vértice 3 (Inf Dir - último círculo dir)</button>
-                    <button id="point4Btn" class="point-btn">④ Vértice 4 (Inf Esq - último círculo esq)</button>
+                    <button id="point1Btn" class="point-btn">① Vértice 1 (Sup Esq)</button>
+                    <button id="point2Btn" class="point-btn">② Vértice 2 (Sup Dir)</button>
+                    <button id="point3Btn" class="point-btn">③ Vértice 3 (Inf Dir)</button>
+                    <button id="point4Btn" class="point-btn">④ Vértice 4 (Inf Esq)</button>
                 </div>
                 <div class="point-selector">
                     <button id="resetPointsBtn" class="point-btn btn-red">🔄 Resetar Todos os Pontos</button>
                 </div>
+                <div class="ponto-status" id="pontoStatusMsg">📍 Aguardando clique no Vértice ①</div>
                 
                 <div class="dicas-box">
-                    💡 <strong>IMPORTANTE:</strong><br>
-                    • No PDF gerado, os vértices estão numerados: ①, ②, ③, ④<br>
-                    • Ao escanear/tirar foto, clique nos 4 NÚMEROS na imagem (na mesma ordem)<br>
-                    • Após marcar os 4 pontos, clique em "CORRIGIR PROVA"
+                    💡 <strong>DICA PARA MARCAR:</strong><br>
+                    • Use o ZOOM para ampliar a imagem e clique com PRECISÃO nos números<br>
+                    • Clique exatamente sobre o NÚMERO (1,2,3,4) dentro dos círculos<br>
+                    • A ordem correta é: ① → ② → ③ → ④
                 </div>
             </div>
             
-            <!-- CÂMERA E CAPTURA -->
             <div class="card camera-area">
                 <div class="section-title">📸 Capturar cartão preenchido</div>
                 <video id="video" autoplay playsinline style="width:100%; border-radius: 20px;"></video>
@@ -444,20 +503,23 @@
                 </div>
             </div>
             
-            <!-- RESULTADO DA IMAGEM -->
+            <!-- ÁREA DA IMAGEM ANALISADA - AMPLIADA COM ZOOM -->
             <div class="card resultado-imagem-area">
-                <div class="section-title">🖼️ Imagem analisada</div>
-                <div id="previewArea">
-                    <canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas>
+                <div class="section-title">🖼️ Clique na imagem para marcar os pontos (Use ZOOM para precisão)</div>
+                <div class="zoom-controls">
+                    <button id="zoomInBtn" class="zoom-btn">🔍 + Aumentar</button>
+                    <button id="zoomOutBtn" class="zoom-btn">🔍 - Diminuir</button>
+                    <button id="zoomResetBtn" class="zoom-btn">⟳ Resetar Zoom</button>
+                    <span id="zoomValue" class="zoom-value">100%</span>
                 </div>
-                <!-- Botão CORRIGIR PROVA -->
+                <div id="imageContainer" class="image-container" style="overflow: auto; max-height: 70vh;">
+                    <canvas id="resultCanvas" style="cursor: crosshair;"></canvas>
+                </div>
                 <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem; margin-top: 15px;">✨ CORRIGIR PROVA</button>
             </div>
         </div>
         
-        <!-- COLUNA DIREITA -->
         <div class="column">
-            <!-- RESULTADO DA CORREÇÃO (movido para cima) -->
             <div id="resultArea" class="result-area" style="display:none;">
                 <div>🎯 RESULTADO</div>
                 <div class="score" id="scoreDisplay">0/0</div>
@@ -468,7 +530,6 @@
                 </div>
             </div>
             
-            <!-- GABARITO OFICIAL -->
             <div class="card">
                 <div class="section-title">✅ Gabarito Oficial <span id="gabaritoStatus"></span></div>
                 <div id="gabaritoDinamico" class="gabarito-grid"></div>
@@ -480,7 +541,6 @@
     <div class="log no-print" id="logArea">⏳ Aguardando OpenCV.js carregar...</div>
 </div>
 
-<!-- ========== RODAPÉ RG MATH ========== -->
 <div class="rg-footer-container no-print">
     <p>© 2023 RG Math - Professor Raylton Guedes</p>
     <a href="https://www.instagram.com/rgmath_education/" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
@@ -492,7 +552,6 @@
 </div>
 
 <script>
-    // ==================== ESTADO GLOBAL ====================
     let currentImageData = null;
     let numQuestoes = 10;
     let numAlternativas = 4;
@@ -501,12 +560,11 @@
     let cameraActive = true;
     let stream = null;
     
-    // Pontos para os 4 vértices numerados
     let pontos = [
-        { x: 0.05, y: 0.05 },   // Vértice 1 - Sup Esq (célula A)
-        { x: 0.95, y: 0.05 },   // Vértice 2 - Sup Dir (célula D)
-        { x: 0.95, y: 0.95 },   // Vértice 3 - Inf Dir (último círculo direita)
-        { x: 0.05, y: 0.95 }    // Vértice 4 - Inf Esq (último círculo esquerda)
+        { x: 0.05, y: 0.05 },
+        { x: 0.95, y: 0.05 },
+        { x: 0.95, y: 0.95 },
+        { x: 0.05, y: 0.95 }
     ];
     let pontoAtual = 0;
     let pontosDefinidos = [false, false, false, false];
@@ -514,7 +572,10 @@
     let ultimosResultados = null;
     let ultimaImagemWarped = null;
     
-    // Elementos DOM
+    // Zoom variables
+    let currentZoom = 1;
+    let imageWidth = 0, imageHeight = 0;
+    
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const captureBtn = document.getElementById('captureBtn');
@@ -537,6 +598,12 @@
     const statsArea = document.getElementById('statsArea');
     const printArea = document.getElementById('printArea');
     const novaProvaBtn = document.getElementById('novaProvaBtn');
+    const pontoStatusMsg = document.getElementById('pontoStatusMsg');
+    const imageContainer = document.getElementById('imageContainer');
+    const zoomInBtn = document.getElementById('zoomInBtn');
+    const zoomOutBtn = document.getElementById('zoomOutBtn');
+    const zoomResetBtn = document.getElementById('zoomResetBtn');
+    const zoomValue = document.getElementById('zoomValue');
     
     const point1Btn = document.getElementById('point1Btn');
     const point2Btn = document.getElementById('point2Btn');
@@ -544,7 +611,6 @@
     const point4Btn = document.getElementById('point4Btn');
     const resetPointsBtn = document.getElementById('resetPointsBtn');
     
-    // ==================== ESPERA OPENCV ====================
     function esperarOpenCV() {
         if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
             cvReady = true;
@@ -556,21 +622,14 @@
     }
     esperarOpenCV();
     
-    // ==================== CÂMERA CORRIGIDA ====================
     async function iniciarCamera() {
-        if (stream) {
-            desligarCamera();
-        }
-        
+        if (stream) desligarCamera();
         try {
-            stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: { exact: "environment" } } 
-            });
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } });
             video.srcObject = stream;
             await video.play();
             cameraActive = true;
             toggleCameraBtn.textContent = "🔴 Desligar Câmera";
-            logArea.innerHTML += "\n📷 Câmera traseira ativada!";
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -578,57 +637,37 @@
                 await video.play();
                 cameraActive = true;
                 toggleCameraBtn.textContent = "🔴 Desligar Câmera";
-                logArea.innerHTML += "\n📷 Câmera ativada!";
             } catch (e) {
                 logArea.innerHTML += "\n❌ Erro ao acessar a câmera: " + e.message;
-                cameraActive = false;
-                toggleCameraBtn.textContent = "🟢 Ligar Câmera";
             }
         }
     }
     
     function desligarCamera() {
         if (stream) {
-            stream.getTracks().forEach(track => {
-                track.stop();
-            });
+            stream.getTracks().forEach(track => track.stop());
             stream = null;
         }
-        if (video) {
-            video.srcObject = null;
-        }
+        if (video) video.srcObject = null;
         cameraActive = false;
         toggleCameraBtn.textContent = "🟢 Ligar Câmera";
-        logArea.innerHTML += "\n🔴 Câmera desligada.";
     }
     
     function toggleCamera() {
-        if (cameraActive) {
-            desligarCamera();
-        } else {
-            iniciarCamera();
-        }
+        if (cameraActive) desligarCamera();
+        else iniciarCamera();
     }
     
     function capturarFoto() {
         if (!cameraActive || !stream || !video.videoWidth) {
-            logArea.innerHTML += "\n⚠️ Câmera não está ativa! Clique em 'Ligar Câmera' primeiro.";
-            alert("Câmera não está ativa! Clique em 'Ligar Câmera' primeiro.");
+            alert("Câmera não está ativa!");
             return;
         }
-        
-        if (video.videoWidth === 0 || video.videoHeight === 0) {
-            logArea.innerHTML += "\n⚠️ Aguarde a câmera estabilizar...";
-            alert("Aguarde a câmera estabilizar antes de tirar a foto.");
-            return;
-        }
-        
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         processarImagem(canvas.toDataURL('image/jpeg', 0.9));
-        logArea.innerHTML += "\n📸 Foto capturada!";
     }
     
     function atualizarBotoesPontos() {
@@ -638,141 +677,61 @@
             if (pontosDefinidos[idx]) btn.classList.add('point-btn-done');
             if (idx === pontoAtual && !pontosDefinidos[idx]) btn.classList.add('active');
         });
-        if (pontosDefinidos.every(v => v === true)) logArea.innerHTML += "\n✅ Todos os 4 vértices definidos! Clique em CORRIGIR PROVA.";
+        const nomes = ['① (canto superior esquerdo)', '② (canto superior direito)', '③ (canto inferior direito)', '④ (canto inferior esquerdo)'];
+        pontoStatusMsg.innerHTML = `📍 Clique no Vértice ${nomes[pontoAtual]}`;
+        if (pontosDefinidos.every(v => v === true)) {
+            pontoStatusMsg.innerHTML = '✅ Todos os 4 vértices definidos! Clique em CORRIGIR PROVA.';
+            pontoStatusMsg.style.background = '#10b981';
+        } else {
+            pontoStatusMsg.style.background = '#1e293b';
+        }
     }
     
-    function desenharResultadoNaImagem() {
-        if (!ultimaImagemWarped) {
-            if (currentImageData) {
-                let img = new Image();
-                img.onload = () => {
-                    const ctx = resultCanvas.getContext('2d');
-                    resultCanvas.width = img.width;
-                    resultCanvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
-                    for (let i = 0; i < pontos.length; i++) {
-                        const x = pontos[i].x * resultCanvas.width;
-                        const y = pontos[i].y * resultCanvas.height;
-                        ctx.beginPath();
-                        ctx.arc(x, y, 12, 0, 2 * Math.PI);
-                        ctx.fillStyle = pontosDefinidos[i] ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)';
-                        ctx.fill();
-                        ctx.fillStyle = '#fff';
-                        ctx.font = 'bold 16px Arial';
-                        ctx.fillText((i+1).toString(), x-5, y+6);
-                    }
-                };
-                img.src = currentImageData;
-            }
-            return;
-        }
+    function applyZoom() {
+        if (imageWidth === 0 || imageHeight === 0) return;
+        const newWidth = imageWidth * currentZoom;
+        const newHeight = imageHeight * currentZoom;
+        resultCanvas.style.width = `${newWidth}px`;
+        resultCanvas.style.height = `${newHeight}px`;
+        resultCanvas.width = imageWidth;
+        resultCanvas.height = imageHeight;
+        zoomValue.textContent = `${Math.round(currentZoom * 100)}%`;
+        desenharImagemAtual();
+    }
+    
+    function desenharImagemAtual() {
+        if (!currentImageData) return;
         let img = new Image();
         img.onload = () => {
-            const ctx = resultCanvas.getContext('2d');
+            imageWidth = img.width;
+            imageHeight = img.height;
             resultCanvas.width = img.width;
             resultCanvas.height = img.height;
+            const ctx = resultCanvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            if (ultimosResultados) {
-                for (let i = 0; i < ultimosResultados.marcacoes.length; i++) {
-                    const marc = ultimosResultados.marcacoes[i];
-                    let cor = '#eab308'; // amarelo padrão
-                    if (marc.resultado === 'acertou') cor = '#10b981';
-                    else if (marc.resultado === 'errou') cor = '#ef4444';
-                    else if (marc.resultado === 'marcacao_dupla') cor = '#8b5cf6';
-                    else if (marc.resultado === 'nao_detectado') cor = '#eab308';
-                    
-                    ctx.beginPath();
-                    ctx.arc(marc.x, marc.y, 18, 0, 2 * Math.PI);
-                    ctx.fillStyle = cor + '60';
-                    ctx.fill();
-                    ctx.strokeStyle = cor;
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.fillStyle = cor;
-                    ctx.font = 'bold 14px Arial';
-                    let texto = marc.marcado;
-                    if (marc.resultado === 'marcacao_dupla') texto = '⚠️' + texto;
-                    ctx.fillText(texto, marc.x-5, marc.y+5);
-                }
+            for (let i = 0; i < pontos.length; i++) {
+                const x = pontos[i].x * resultCanvas.width;
+                const y = pontos[i].y * resultCanvas.height;
+                ctx.beginPath();
+                ctx.arc(x, y, 14, 0, 2 * Math.PI);
+                ctx.fillStyle = pontosDefinidos[i] ? 'rgba(16, 185, 129, 0.8)' : 'rgba(239, 68, 68, 0.8)';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 18px Arial';
+                ctx.fillText((i+1).toString(), x-6, y+7);
             }
+            applyZoom();
         };
-        img.src = ultimaImagemWarped;
+        img.src = currentImageData;
     }
-    
-    function atualizarExibicao() {
-        if (ultimosResultados && ultimaImagemWarped) desenharResultadoNaImagem();
-        else if (currentImageData) {
-            let img = new Image();
-            img.onload = () => {
-                const ctx = resultCanvas.getContext('2d');
-                resultCanvas.width = img.width;
-                resultCanvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                for (let i = 0; i < pontos.length; i++) {
-                    const x = pontos[i].x * resultCanvas.width;
-                    const y = pontos[i].y * resultCanvas.height;
-                    ctx.beginPath();
-                    ctx.arc(x, y, 12, 0, 2 * Math.PI);
-                    ctx.fillStyle = pontosDefinidos[i] ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)';
-                    ctx.fill();
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 16px Arial';
-                    ctx.fillText((i+1).toString(), x-5, y+6);
-                }
-            };
-            img.src = currentImageData;
-        }
-    }
-    
-    resultCanvas.addEventListener('click', (e) => {
-        if (!currentImageData) { logArea.innerHTML += "\n⚠️ Carregue uma imagem primeiro."; return; }
-        ultimosResultados = null;
-        ultimaImagemWarped = null;
-        const rect = resultCanvas.getBoundingClientRect();
-        const scaleX = resultCanvas.width / rect.width;
-        const scaleY = resultCanvas.height / rect.height;
-        let canvasX = (e.clientX - rect.left) * scaleX;
-        let canvasY = (e.clientY - rect.top) * scaleY;
-        canvasX = Math.min(Math.max(0, canvasX), resultCanvas.width);
-        canvasY = Math.min(Math.max(0, canvasY), resultCanvas.height);
-        pontos[pontoAtual] = { x: canvasX / resultCanvas.width, y: canvasY / resultCanvas.height };
-        pontosDefinidos[pontoAtual] = true;
-        let nextPoint = (pontoAtual + 1) % 4;
-        while (nextPoint !== pontoAtual && pontosDefinidos[nextPoint]) nextPoint = (nextPoint + 1) % 4;
-        pontoAtual = nextPoint;
-        const nomes = ['① Vértice 1 (Sup Esq - A)', '② Vértice 2 (Sup Dir - D)', '③ Vértice 3 (Inf Dir)', '④ Vértice 4 (Inf Esq)'];
-        logArea.innerHTML += `\n📍 ${nomes[pontoAtual === 0 ? 3 : pontoAtual-1]} definido!`;
-        atualizarBotoesPontos();
-        atualizarExibicao();
-    });
-    
-    function resetarPontos() {
-        pontos = [{ x: 0.05, y: 0.05 }, { x: 0.95, y: 0.05 }, { x: 0.95, y: 0.95 }, { x: 0.05, y: 0.95 }];
-        pontoAtual = 0;
-        pontosDefinidos = [false, false, false, false];
-        ultimosResultados = null;
-        ultimaImagemWarped = null;
-        atualizarBotoesPontos();
-        atualizarExibicao();
-        logArea.innerHTML += "\n🔄 Pontos resetados! Clique nos 4 números (vértices) na imagem.";
-    }
-    
-    function selecionarPonto(indice) {
-        if (pontosDefinidos[indice]) { pontosDefinidos[indice] = false; ultimosResultados = null; ultimaImagemWarped = null; }
-        pontoAtual = indice;
-        atualizarBotoesPontos();
-        logArea.innerHTML += `\n🎯 Editando vértice ${indice+1}`;
-    }
-    
-    point1Btn.addEventListener('click', () => selecionarPonto(0));
-    point2Btn.addEventListener('click', () => selecionarPonto(1));
-    point3Btn.addEventListener('click', () => selecionarPonto(2));
-    point4Btn.addEventListener('click', () => selecionarPonto(3));
-    resetPointsBtn.addEventListener('click', resetarPontos);
     
     function processarImagem(imageData) { 
         currentImageData = imageData; 
         resetarPontos(); 
+        desenharImagemAtual();
         logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 NÚMEROS (vértices) na imagem."; 
     }
     
@@ -783,83 +742,158 @@
         reader.readAsDataURL(file); 
     }
     
-    // Função para resetar apenas a correção (mantém gabarito)
+    function resetarPontos() {
+        pontos = [{ x: 0.05, y: 0.05 }, { x: 0.95, y: 0.05 }, { x: 0.95, y: 0.95 }, { x: 0.05, y: 0.95 }];
+        pontoAtual = 0;
+        pontosDefinidos = [false, false, false, false];
+        ultimosResultados = null;
+        ultimaImagemWarped = null;
+        currentZoom = 1;
+        atualizarBotoesPontos();
+        if (currentImageData) desenharImagemAtual();
+        logArea.innerHTML += "\n🔄 Pontos resetados! Clique nos 4 números (vértices) na imagem.";
+    }
+    
     function resetarCorrecao() {
         currentImageData = null;
         ultimosResultados = null;
         ultimaImagemWarped = null;
         resetarPontos();
         resultArea.style.display = 'none';
-        
-        // Limpa o canvas de resultado
         const ctx = resultCanvas.getContext('2d');
         ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
-        
-        logArea.innerHTML += "\n🔄 Pronto para corrigir nova prova! O gabarito oficial foi mantido.";
-        alert("Pronto para corrigir nova prova! O gabarito oficial foi mantido.\n\nTire uma nova foto ou envie outra imagem.");
+        resultCanvas.style.width = '100%';
+        logArea.innerHTML += "\n🔄 Pronto para corrigir nova prova!";
+        alert("Pronto para corrigir nova prova! O gabarito oficial foi mantido.");
     }
     
-    // ==================== GERADOR DO CARTÃO ====================
+    function selecionarPonto(indice) {
+        if (pontosDefinidos[indice]) { 
+            pontosDefinidos[indice] = false; 
+            ultimosResultados = null; 
+            ultimaImagemWarped = null; 
+        }
+        pontoAtual = indice;
+        atualizarBotoesPontos();
+        logArea.innerHTML += `\n🎯 Editando vértice ${indice+1}`;
+        if (currentImageData) desenharImagemAtual();
+    }
+    
+    resultCanvas.addEventListener('click', (e) => {
+        if (!currentImageData) { alert("Carregue uma imagem primeiro!"); return; }
+        ultimosResultados = null;
+        ultimaImagemWarped = null;
+        
+        const rect = resultCanvas.getBoundingClientRect();
+        const scaleX = resultCanvas.width / rect.width;
+        const scaleY = resultCanvas.height / rect.height;
+        
+        let canvasX = (e.clientX - rect.left) * scaleX;
+        let canvasY = (e.clientY - rect.top) * scaleY;
+        canvasX = Math.min(Math.max(0, canvasX), resultCanvas.width);
+        canvasY = Math.min(Math.max(0, canvasY), resultCanvas.height);
+        
+        pontos[pontoAtual] = { x: canvasX / resultCanvas.width, y: canvasY / resultCanvas.height };
+        pontosDefinidos[pontoAtual] = true;
+        
+        let nextPoint = (pontoAtual + 1) % 4;
+        while (nextPoint !== pontoAtual && pontosDefinidos[nextPoint]) nextPoint = (nextPoint + 1) % 4;
+        pontoAtual = nextPoint;
+        
+        const nomes = ['① Vértice 1 (Sup Esq)', '② Vértice 2 (Sup Dir)', '③ Vértice 3 (Inf Dir)', '④ Vértice 4 (Inf Esq)'];
+        logArea.innerHTML += `\n📍 ${nomes[pontoAtual === 0 ? 3 : pontoAtual-1]} definido! (${Math.round(pontos[pontoAtual === 0 ? 3 : pontoAtual-1].x*100)}%, ${Math.round(pontos[pontoAtual === 0 ? 3 : pontoAtual-1].y*100)}%)`;
+        
+        atualizarBotoesPontos();
+        desenharImagemAtual();
+    });
+    
+    function desenharResultadoNaImagem() {
+        if (!ultimaImagemWarped) {
+            if (currentImageData) desenharImagemAtual();
+            return;
+        }
+        let img = new Image();
+        img.onload = () => {
+            imageWidth = img.width;
+            imageHeight = img.height;
+            resultCanvas.width = img.width;
+            resultCanvas.height = img.height;
+            const ctx = resultCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            if (ultimosResultados) {
+                for (let i = 0; i < ultimosResultados.marcacoes.length; i++) {
+                    const marc = ultimosResultados.marcacoes[i];
+                    let cor = '#eab308';
+                    if (marc.resultado === 'acertou') cor = '#10b981';
+                    else if (marc.resultado === 'errou') cor = '#ef4444';
+                    else if (marc.resultado === 'marcacao_dupla') cor = '#8b5cf6';
+                    
+                    ctx.beginPath();
+                    ctx.arc(marc.x, marc.y, 20, 0, 2 * Math.PI);
+                    ctx.fillStyle = cor + '80';
+                    ctx.fill();
+                    ctx.strokeStyle = cor;
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                    ctx.fillStyle = cor;
+                    ctx.font = 'bold 16px Arial';
+                    let texto = marc.marcado;
+                    if (marc.resultado === 'marcacao_dupla') texto = '⚠️' + texto;
+                    ctx.fillText(texto, marc.x-8, marc.y+6);
+                }
+            }
+            applyZoom();
+        };
+        img.src = ultimaImagemWarped;
+    }
+    
+    // Zoom functions
+    zoomInBtn.addEventListener('click', () => {
+        currentZoom = Math.min(currentZoom + 0.25, 3);
+        applyZoom();
+    });
+    zoomOutBtn.addEventListener('click', () => {
+        currentZoom = Math.max(currentZoom - 0.25, 0.5);
+        applyZoom();
+    });
+    zoomResetBtn.addEventListener('click', () => {
+        currentZoom = 1;
+        applyZoom();
+    });
+    
+    point1Btn.addEventListener('click', () => selecionarPonto(0));
+    point2Btn.addEventListener('click', () => selecionarPonto(1));
+    point3Btn.addEventListener('click', () => selecionarPonto(2));
+    point4Btn.addEventListener('click', () => selecionarPonto(3));
+    resetPointsBtn.addEventListener('click', resetarPontos);
+    captureBtn.addEventListener('click', capturarFoto);
+    toggleCameraBtn.addEventListener('click', toggleCamera);
+    fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
+    corrigirBtn.addEventListener('click', executarCorrecao);
+    novaProvaBtn.addEventListener('click', resetarCorrecao);
+    
     function gerarCartaoOMR(titulo, qtd, altCount) {
         const letrasUsadas = letras.slice(0, altCount);
         const indexA = 0;
         const indexD = altCount >= 4 ? 3 : altCount - 1;
-        
-        let html = `
-        <div class="omr-card" style="background: white; position: relative;">
-            <h2 style="text-align: center; margin: 10px 0 15px; font-size: 22px;">${titulo}</h2>
-            
-            <div style="display: flex; justify-content: space-between; margin: 20px 0; padding: 8px 0; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc;">
-                <div><strong>NOME:</strong> _________________________</div>
-                <div><strong>DATA:</strong> ___/___/_____</div>
-                <div><strong>TURMA:</strong> ________</div>
-            </div>
-            
-            <div style="background: #fef3c7; padding: 8px; border-radius: 40px; text-align: center; margin: 15px 0; font-size: 13px; font-weight: 500;">
-                📌 PREENCHA COMPLETAMENTE O CÍRCULO com caneta AZUL ou PRETA
-            </div>
-            
-            <table class="questoes-table" id="gabaritoTable">
-                <thead>
-                    <tr><th>Questão</th>`;
-        for (let l of letrasUsadas) {
-            html += `<th>${l}</th>`;
-        }
-        html += `<tr>
-                </thead>
-                <tbody>`;
-        
+        let html = `<div class="omr-card"><h2 style="text-align: center;">${titulo}</h2>
+            <div style="display: flex; justify-content: space-between; margin: 20px 0;"><div><strong>NOME:</strong> _________________________</div>
+            <div><strong>DATA:</strong> ___/___/_____</div><div><strong>TURMA:</strong> ________</div></div>
+            <div style="background: #fef3c7; padding: 8px; border-radius: 40px; text-align: center;">📌 PREENCHA COMPLETAMENTE O CÍRCULO</div>
+            <table class="questoes-table"><thead><tr><th>Questão</th>${letrasUsadas.map(l => `<th>${l}</th>`).join('')}</tr></thead><tbody>`;
         for (let i = 1; i <= qtd; i++) {
-            html += `<tr>
-                        <td style="font-weight: bold;">${i}</td>`;
+            html += `<tr><td style="font-weight: bold;">${i}</td>`;
             for (let j = 0; j < altCount; j++) {
                 let vertexHtml = "";
-                if (i === 1 && j === indexA) {
-                    vertexHtml = `<div class="vertex-tl">1</div>`;
-                }
-                if (i === 1 && j === indexD) {
-                    vertexHtml = `<div class="vertex-tr">2</div>`;
-                }
-                if (i === qtd && j === altCount - 1) {
-                    vertexHtml = `<div class="vertex-br">3</div>`;
-                }
-                if (i === qtd && j === 0) {
-                    vertexHtml = `<div class="vertex-bl">4</div>`;
-                }
-                html += `<td style="position: relative; text-align: center; vertical-align: middle;">
-                            <div class="circle-omr"></div>
-                            ${vertexHtml}
-                            </td>`;
+                if (i === 1 && j === indexA) vertexHtml = `<div class="vertex-tl">1</div>`;
+                if (i === 1 && j === indexD) vertexHtml = `<div class="vertex-tr">2</div>`;
+                if (i === qtd && j === altCount - 1) vertexHtml = `<div class="vertex-br">3</div>`;
+                if (i === qtd && j === 0) vertexHtml = `<div class="vertex-bl">4</div>`;
+                html += `<td style="position: relative;"><div class="circle-omr"></div>${vertexHtml}</td>`;
             }
             html += `</tr>`;
         }
-        html += `</tbody>
-            </table>
-            
-            <div style="text-align: center; font-size: 10px; margin-top: 20px; padding-top: 10px; border-top: 1px solid #ccc; color: #475569;">
-                📂 SISTEMA OMR - Enquadre os 4 NÚMEROS (1,2,3,4) na foto
-            </div>
-        </div>`;
+        html += `</tbody></table></div>`;
         return html;
     }
     
@@ -871,8 +905,7 @@
         if (isNaN(numAlternativas)) numAlternativas = 4;
         numQuestoes = Math.min(30, Math.max(1, numQuestoes));
         numAlternativas = Math.min(6, Math.max(2, numAlternativas));
-        const cartaoHTML = gerarCartaoOMR(titulo, numQuestoes, numAlternativas);
-        printArea.innerHTML = cartaoHTML;
+        printArea.innerHTML = gerarCartaoOMR(titulo, numQuestoes, numAlternativas);
         gerarInterfaceGabarito();
         atualizarStatusGabarito();
     }
@@ -880,34 +913,19 @@
     function gerarPDF() {
         const conteudo = printArea.innerHTML;
         const titulo = tituloProvaInput.value.trim() || "Gabarito";
-        if (!conteudo || conteudo.trim() === "") { alert("Erro: Nenhum conteúdo!"); return; }
         const win = window.open('', '_blank');
-        win.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head><meta charset="UTF-8"><title>${titulo} - Gabarito OMR</title>
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { font-family: 'Segoe UI', Arial, sans-serif; padding: 20px; background: white; }
-                .omr-card { position: relative; background: white; padding: 40px 30px; border: 1px solid #000; max-width: 900px; margin: 0 auto; }
-                .circle-omr { display: inline-block; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #000; background: white; }
-                .questoes-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                .questoes-table th, .questoes-table td { border: 1px solid #000; padding: 8px; text-align: center; position: relative; }
-                h2 { text-align: center; }
-                .vertex-tl { position: absolute; top: -10px; left: -10px; background: #10b981; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid white; }
-                .vertex-tr { position: absolute; top: -10px; right: -10px; background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid white; }
-                .vertex-br { position: absolute; bottom: -10px; right: -10px; background: #ef4444; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid white; }
-                .vertex-bl { position: absolute; bottom: -10px; left: -10px; background: #f59e0b; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid white; }
-                @media print { body { padding: 0; } .vertex-tl, .vertex-tr, .vertex-br, .vertex-bl { print-color-adjust: exact; } }
-            </style>
-            </head>
-            <body>${conteudo}<script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };<\/script></body>
-            </html>
-        `);
+        win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
+        <style>.omr-card{position:relative;background:white;padding:40px 30px;border:1px solid #000;max-width:900px;margin:0 auto;}
+        .circle-omr{display:inline-block;width:26px;height:26px;border-radius:50%;border:2px solid #000;background:white;}
+        .questoes-table{width:100%;border-collapse:collapse;margin:20px 0;}.questoes-table th,.questoes-table td{border:1px solid #000;padding:8px;text-align:center;position:relative;}
+        .vertex-tl{position:absolute;top:-10px;left:-10px;background:#10b981;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}
+        .vertex-tr{position:absolute;top:-10px;right:-10px;background:#3b82f6;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+        .vertex-br{position:absolute;bottom:-10px;right:-10px;background:#ef4444;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+        .vertex-bl{position:absolute;bottom:-10px;left:-10px;background:#f59e0b;color:white;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+        @media print{body{padding:0;}}</style></head><body>${conteudo}<script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script></body></html>`);
         win.document.close();
     }
     
-    // ==================== GABARITO ====================
     function gerarInterfaceGabarito() {
         const container = document.getElementById('gabaritoDinamico');
         container.innerHTML = '';
@@ -959,13 +977,13 @@
         const selects = document.querySelectorAll('#gabaritoDinamico select');
         selects.forEach((select) => { const optionA = select.querySelector('option[value="A"]'); if (optionA) select.value = 'A'; });
         atualizarStatusGabarito();
-        logArea.innerHTML += "\n📋 Gabarito preenchido com todas 'A'";
     }
     
     resetGabaritoBtn.addEventListener('click', preencherTodasA);
     validarGabaritoBtn.addEventListener('click', () => { const g = obterGabaritoDaTela(); alert(`Gabarito: ${Object.keys(g).length}/${numQuestoes} questões preenchidas`); });
+    btnAplicarConfig.addEventListener('click', atualizarCartaoVisual);
+    btnGerarPDF.addEventListener('click', gerarPDF);
     
-    // ==================== CORREÇÃO COM VALIDAÇÃO DE MARCAÇÃO DUPLA ====================
     async function executarCorrecao() {
         if (!currentImageData) { alert("Nenhuma imagem."); return; }
         if (!pontosDefinidos.every(v => v === true)) { alert("Defina os 4 vértices numerados primeiro!"); return; }
@@ -997,126 +1015,54 @@
                     cell.delete();
                     contagens.push(nz);
                 }
-                
                 const areaCell = cellWidth * cellHeight;
                 const minFill = areaCell * 0.04;
                 let maiorCount = Math.max(...contagens);
                 let melhorAlt = contagens.indexOf(maiorCount);
                 let contagensOrdenadas = [...contagens].sort((a,b) => b - a);
                 let segundaMaior = contagensOrdenadas[1] || 0;
-                
                 let status = 'nao_detectado';
                 let letraDetectada = null;
-                
-                if (maiorCount < minFill) {
-                    status = 'nao_detectado';
-                    logArea.innerHTML += `\n⚠️ Questão ${r+1}: Nenhuma marcação detectada`;
-                }
-                else if (segundaMaior >= minFill && (maiorCount / (segundaMaior + 1)) < 1.5) {
-                    status = 'marcacao_dupla';
-                    logArea.innerHTML += `\n⚠️ Questão ${r+1}: Marcação dupla detectada (${letras[melhorAlt]} e outra) - ANULADA`;
-                }
-                else {
-                    status = 'marcado';
-                    letraDetectada = letras[melhorAlt];
-                    respostasAluno[r+1] = letraDetectada;
-                    posicoes[r+1] = { 
-                        x: (melhorAlt * cellWidth) + (cellWidth/2), 
-                        y: (r * cellHeight) + (cellHeight/2),
-                        confianca: maiorCount / areaCell
-                    };
-                    logArea.innerHTML += `\n✓ Questão ${r+1}: Detectado ${letraDetectada} (${Math.round(maiorCount/areaCell*100)}% preenchido)`;
-                }
+                if (maiorCount < minFill) status = 'nao_detectado';
+                else if (segundaMaior >= minFill && (maiorCount / (segundaMaior + 1)) < 1.5) status = 'marcacao_dupla';
+                else { status = 'marcado'; letraDetectada = letras[melhorAlt]; respostasAluno[r+1] = letraDetectada; posicoes[r+1] = { x: (melhorAlt * cellWidth) + (cellWidth/2), y: (r * cellHeight) + (cellHeight/2), confianca: maiorCount / areaCell }; }
                 marcacaoConfianca[r+1] = { status, melhorAlt };
             }
             
-            let acertos = 0, erros = 0, duplas = 0, naoDetectados = 0;
-            let marcacoes = [];
-            
+            let acertos = 0, erros = 0, duplas = 0, naoDetectados = 0, marcacoes = [];
             for (let i = 1; i <= numQuestoes; i++) {
-                let resultado = 'nao_detectado';
-                let marcado = '?';
-                let statusMarcacao = marcacaoConfianca[i]?.status || 'nao_detectado';
-                
+                let resultado = 'nao_detectado', marcado = '?', statusMarcacao = marcacaoConfianca[i]?.status || 'nao_detectado';
                 if (statusMarcacao === 'marcado' && respostasAluno[i]) {
                     marcado = respostasAluno[i];
                     if (gabarito[i]) {
-                        if (gabarito[i] === respostasAluno[i]) {
-                            resultado = 'acertou';
-                            acertos++;
-                        } else {
-                            resultado = 'errou';
-                            erros++;
-                        }
-                    } else {
-                        resultado = 'errou';
-                        erros++;
-                    }
-                } else if (statusMarcacao === 'marcacao_dupla') {
-                    resultado = 'marcacao_dupla';
-                    marcado = '⚠️ DUPLA';
-                    duplas++;
-                } else {
-                    resultado = 'nao_detectado';
-                    marcado = '?';
-                    naoDetectados++;
-                }
-                
-                if (posicoes[i]) {
-                    marcacoes.push({ x: posicoes[i].x, y: posicoes[i].y, marcado, resultado });
-                } else {
-                    marcacoes.push({ x: (cellWidth * (cols/2)), y: ((i-1)*cellHeight)+(cellHeight/2), marcado: marcado, resultado: resultado });
-                }
+                        if (gabarito[i] === respostasAluno[i]) { resultado = 'acertou'; acertos++; }
+                        else { resultado = 'errou'; erros++; }
+                    } else { resultado = 'errou'; erros++; }
+                } else if (statusMarcacao === 'marcacao_dupla') { resultado = 'marcacao_dupla'; marcado = '⚠️ DUPLA'; duplas++; }
+                else { resultado = 'nao_detectado'; marcado = '?'; naoDetectados++; }
+                if (posicoes[i]) marcacoes.push({ x: posicoes[i].x, y: posicoes[i].y, marcado, resultado });
+                else marcacoes.push({ x: (cellWidth * (cols/2)), y: ((i-1)*cellHeight)+(cellHeight/2), marcado: marcado, resultado: resultado });
             }
             
             ultimosResultados = { marcacoes, acertos, erros, duplas, naoDetectados };
-            let canvasWarp = document.createElement('canvas'); 
-            canvasWarp.width = warped.cols; 
-            canvasWarp.height = warped.rows;
-            cv.imshow(canvasWarp, warped); 
-            ultimaImagemWarped = canvasWarp.toDataURL('image/jpeg', 0.9);
+            let canvasWarp = document.createElement('canvas'); canvasWarp.width = warped.cols; canvasWarp.height = warped.rows;
+            cv.imshow(canvasWarp, warped); ultimaImagemWarped = canvasWarp.toDataURL('image/jpeg', 0.9);
             desenharResultadoNaImagem();
             
             let percentual = (acertos / numQuestoes) * 100;
             let nota = (acertos/numQuestoes*10).toFixed(1);
-            
             scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
-            gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>
-                                     ${acertos} acerto${acertos !== 1 ? 's' : ''}<br>
-                                     ${erros} erro${erros !== 1 ? 's' : ''}<br>
-                                     ${duplas} marcação(ões) dupla(as) (ANULADAS)<br>
-                                     ${naoDetectados} não detectado(s)`;
-            
-            statsArea.innerHTML = `
-                <div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
+            gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>${acertos} acerto${acertos !== 1 ? 's' : ''}<br>${erros} erro${erros !== 1 ? 's' : ''}<br>${duplas} marcação(ões) dupla(as)<br>${naoDetectados} não detectado(s)`;
+            statsArea.innerHTML = `<div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${erros}</div><div class="stat-label">Erros</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#8b5cf6;">${duplas}</div><div class="stat-label">Duplas/Anuladas</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#eab308;">${naoDetectados}</div><div class="stat-label">Ñ Detectados</div></div>
-                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota (0-10)</div></div>
-            `;
-            
+                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota (0-10)</div></div>`;
             resultArea.style.display = 'block';
-            logArea.innerHTML += `\n\n📊 RESULTADO FINAL:`;
-            logArea.innerHTML += `\n✅ Acertos: ${acertos}`;
-            logArea.innerHTML += `\n❌ Erros: ${erros}`;
-            logArea.innerHTML += `\n⚠️ Marcações Duplas (Anuladas): ${duplas}`;
-            logArea.innerHTML += `\n⚪ Não Detectadas: ${naoDetectados}`;
-            logArea.innerHTML += `\n🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)`;
-            
+            logArea.innerHTML += `\n\n📊 RESULTADO FINAL: Acertos: ${acertos} | Erros: ${erros} | Duplas: ${duplas} | NOTA: ${nota}`;
             src.delete(); srcTri.delete(); dstTri.delete(); M.delete(); warped.delete(); gray.delete(); binary.delete();
-        } catch(err) { 
-            logArea.innerHTML += `\n❌ Erro: ${err.message}`; 
-            alert(`Erro: ${err.message}`); 
-        }
+        } catch(err) { logArea.innerHTML += `\n❌ Erro: ${err.message}`; alert(`Erro: ${err.message}`); }
     }
-    
-    captureBtn.addEventListener('click', capturarFoto);
-    toggleCameraBtn.addEventListener('click', toggleCamera);
-    fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
-    corrigirBtn.addEventListener('click', executarCorrecao);
-    btnAplicarConfig.addEventListener('click', atualizarCartaoVisual);
-    btnGerarPDF.addEventListener('click', gerarPDF);
-    novaProvaBtn.addEventListener('click', resetarCorrecao);
     
     iniciarCamera();
     atualizarCartaoVisual();
