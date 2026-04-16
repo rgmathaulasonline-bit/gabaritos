@@ -18,6 +18,7 @@
             display: inline-flex; align-items: center; gap: 8px;
             text-decoration: none; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
         }
+        .btn-home:hover { background: linear-gradient(135deg, #0f172a, #020617); transform: translateY(-2px); }
         
         .config-panel { background: #f8fafc; border-radius: 24px; padding: 20px; margin-bottom: 30px; display: flex; flex-wrap: wrap; gap: 25px; align-items: flex-end; border: 1px solid #e2e8f0; }
         .config-item { display: flex; flex-direction: column; gap: 6px; }
@@ -118,16 +119,16 @@
         .result-buttons { display: flex; gap: 10px; margin-top: 15px; justify-content: center; flex-wrap: wrap; }
         .btn-nova-prova { background: #f97316; }
         
-        .processing-time { font-size: 0.8rem; color: #10b981; margin-top: 10px; font-weight: bold; }
-        
-        /* Loading indicator */
-        .loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000; display: none; }
+        .loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000; display: none; text-align: center; }
+        .loading-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
     <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha OpenCV');"></script>
 </head>
 <body>
 
 <div class="loading" id="loadingIndicator">
+    <div class="loading-spinner"></div>
     <div>🔍 Processando...</div>
     <div style="font-size: 12px; margin-top: 5px;">Aguarde, isso leva apenas 1-2 segundos</div>
 </div>
@@ -177,18 +178,19 @@
             <div class="card instrucoes-area">
                 <div class="section-title">🎯 Clique nos 4 NÚMEROS (vértices):</div>
                 <div class="point-selector">
-                    <button id="point1Btn" class="point-btn">① Vértice 1</button>
-                    <button id="point2Btn" class="point-btn">② Vértice 2</button>
-                    <button id="point3Btn" class="point-btn">③ Vértice 3</button>
-                    <button id="point4Btn" class="point-btn">④ Vértice 4</button>
+                    <button id="point1Btn" class="point-btn">① Vértice 1 (Sup Esq)</button>
+                    <button id="point2Btn" class="point-btn">② Vértice 2 (Sup Dir)</button>
+                    <button id="point3Btn" class="point-btn">③ Vértice 3 (Inf Dir)</button>
+                    <button id="point4Btn" class="point-btn">④ Vértice 4 (Inf Esq)</button>
                 </div>
                 <div class="point-selector">
                     <button id="resetPointsBtn" class="point-btn btn-red">🔄 Resetar Pontos</button>
                 </div>
                 <div class="dicas-box">
-                    ⚡ <strong>VERSÃO ULTRA RÁPIDA:</strong><br>
+                    ⚡ <strong>VERSÃO ULTRA RÁPIDA E CORRIGIDA:</strong><br>
                     • Processamento em ~1-2 segundos<br>
-                    • Algoritmo otimizado sem CLAHE<br>
+                    • Contagem de acertos precisa e confiável<br>
+                    • Sinalização visual verde para acertos e vermelho para erros<br>
                     • Detecção precisa com threshold adaptativo
                 </div>
             </div>
@@ -212,7 +214,7 @@
             </div>
             
             <div class="card resultado-imagem-area">
-                <div class="section-title">🖼️ Resultado</div>
+                <div class="section-title">🖼️ Resultado da Correção</div>
                 <canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas>
                 <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem; margin-top: 15px;">⚡ CORRIGIR PROVA</button>
             </div>
@@ -232,8 +234,8 @@
             <div class="card">
                 <div class="section-title">✅ Gabarito Oficial <span id="gabaritoStatus"></span></div>
                 <div id="gabaritoDinamico" class="gabarito-grid"></div>
-                <button id="resetGabaritoBtn" class="btn-secondary" style="margin-top: 16px;">🔄 Preencher com A</button>
-                <button id="validarGabaritoBtn" class="btn-secondary" style="margin-top: 8px;">✓ Validar</button>
+                <button id="resetGabaritoBtn" class="btn-secondary" style="margin-top: 16px;">🔄 Preencher todas com A</button>
+                <button id="validarGabaritoBtn" class="btn-secondary" style="margin-top: 8px;">✓ Validar preenchimento</button>
             </div>
         </div>
     </div>
@@ -300,7 +302,7 @@
     const point4Btn = document.getElementById('point4Btn');
     const resetPointsBtn = document.getElementById('resetPointsBtn');
     
-    function mostrarLoading() { loadingIndicator.style.display = 'block'; }
+    function mostrarLoading() { loadingIndicator.style.display = 'flex'; }
     function esconderLoading() { loadingIndicator.style.display = 'none'; }
     
     function esperarOpenCV() {
@@ -322,6 +324,7 @@
             await video.play();
             cameraActive = true;
             toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+            logArea.innerHTML += "\n📷 Câmera ativada!";
         } catch (err) {
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -329,6 +332,7 @@
                 await video.play();
                 cameraActive = true;
                 toggleCameraBtn.textContent = "🔴 Desligar Câmera";
+                logArea.innerHTML += "\n📷 Câmera ativada!";
             } catch (e) {
                 logArea.innerHTML += "\n❌ Erro câmera: " + e.message;
                 cameraActive = false;
@@ -342,6 +346,7 @@
         if (video) video.srcObject = null;
         cameraActive = false;
         toggleCameraBtn.textContent = "🟢 Ligar Câmera";
+        logArea.innerHTML += "\n🔴 Câmera desligada.";
     }
     
     function toggleCamera() { cameraActive ? desligarCamera() : iniciarCamera(); }
@@ -356,6 +361,7 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0);
         processarImagem(canvas.toDataURL('image/jpeg', 0.9));
+        logArea.innerHTML += "\n📸 Foto capturada!";
     }
     
     function atualizarBotoesPontos() {
@@ -365,6 +371,9 @@
             if (pontosDefinidos[idx]) btn.classList.add('point-btn-done');
             if (idx === pontoAtual && !pontosDefinidos[idx]) btn.classList.add('active');
         });
+        if (pontosDefinidos.every(v => v === true)) {
+            logArea.innerHTML += "\n✅ Todos os 4 vértices definidos! Clique em CORRIGIR PROVA.";
+        }
     }
     
     function desenharResultadoNaImagem() {
@@ -416,6 +425,12 @@
                     ctx.fillStyle = cor;
                     ctx.font = 'bold 14px Arial';
                     ctx.fillText(marc.marcado, marc.x-5, marc.y+5);
+                    
+                    if (marc.confianca) {
+                        ctx.font = '10px Arial';
+                        ctx.fillStyle = '#666';
+                        ctx.fillText(`${Math.round(marc.confianca*100)}%`, marc.x-10, marc.y-10);
+                    }
                 }
             }
         };
@@ -423,7 +438,10 @@
     }
     
     resultCanvas.addEventListener('click', (e) => {
-        if (!currentImageData) return;
+        if (!currentImageData) {
+            logArea.innerHTML += "\n⚠️ Carregue uma imagem primeiro.";
+            return;
+        }
         ultimosResultados = null;
         ultimaImagemWarped = null;
         const rect = resultCanvas.getBoundingClientRect();
@@ -438,6 +456,8 @@
         let nextPoint = (pontoAtual + 1) % 4;
         while (nextPoint !== pontoAtual && pontosDefinidos[nextPoint]) nextPoint = (nextPoint + 1) % 4;
         pontoAtual = nextPoint;
+        const nomes = ['① Vértice 1 (Sup Esq)', '② Vértice 2 (Sup Dir)', '③ Vértice 3 (Inf Dir)', '④ Vértice 4 (Inf Esq)'];
+        logArea.innerHTML += `\n📍 ${nomes[pontoAtual === 0 ? 3 : pontoAtual-1]} definido!`;
         atualizarBotoesPontos();
         desenharResultadoNaImagem();
     });
@@ -450,13 +470,18 @@
         ultimaImagemWarped = null;
         atualizarBotoesPontos();
         desenharResultadoNaImagem();
-        logArea.innerHTML += "\n🔄 Pontos resetados!";
+        logArea.innerHTML += "\n🔄 Pontos resetados! Clique nos 4 números na imagem.";
     }
     
     function selecionarPonto(indice) {
-        if (pontosDefinidos[indice]) { pontosDefinidos[indice] = false; ultimosResultados = null; ultimaImagemWarped = null; }
+        if (pontosDefinidos[indice]) { 
+            pontosDefinidos[indice] = false; 
+            ultimosResultados = null; 
+            ultimaImagemWarped = null; 
+        }
         pontoAtual = indice;
         atualizarBotoesPontos();
+        logArea.innerHTML += `\n🎯 Editando vértice ${indice+1}`;
     }
     
     point1Btn.addEventListener('click', () => selecionarPonto(0));
@@ -468,7 +493,7 @@
     function processarImagem(imageData) { 
         currentImageData = imageData; 
         resetarPontos(); 
-        logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 números na imagem."; 
+        logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 NÚMEROS (vértices) na imagem."; 
     }
     
     function carregarUpload(file) { 
@@ -486,7 +511,8 @@
         resultArea.style.display = 'none';
         const ctx = resultCanvas.getContext('2d');
         ctx.clearRect(0, 0, resultCanvas.width, resultCanvas.height);
-        logArea.innerHTML += "\n🔄 Pronto para nova prova!";
+        logArea.innerHTML += "\n🔄 Pronto para corrigir nova prova! O gabarito oficial foi mantido.";
+        alert("Pronto para corrigir nova prova! O gabarito oficial foi mantido.\n\nTire uma nova foto ou envie outra imagem.");
     }
     
     // Gerador do cartão
@@ -501,7 +527,7 @@
                 <div><strong>DATA:</strong> ___/___/_____</div>
                 <div><strong>TURMA:</strong> ________</div>
             </div>
-            <div style="background:#fef3c7; padding:8px; border-radius:40px; text-align:center; margin:15px 0;">📌 PREENCHA COMPLETAMENTE O CÍRCULO</div>
+            <div style="background:#fef3c7; padding:8px; border-radius:40px; text-align:center; margin:15px 0;">📌 PREENCHA COMPLETAMENTE O CÍRCULO com caneta AZUL ou PRETA</div>
             <table class="questoes-table"><thead><tr><th>Questão</th>`;
         for (let l of letrasUsadas) html += `<th>${l}</th>`;
         html += `</tr></thead><tbody>`;
@@ -538,20 +564,22 @@
     function gerarPDF() {
         const conteudo = printArea.innerHTML;
         const titulo = tituloProvaInput.value.trim() || "Gabarito";
+        if (!conteudo || conteudo.trim() === "") { alert("Erro: Nenhum conteúdo!"); return; }
         const win = window.open('', '_blank');
-        win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo}</title>
+        win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo} - Gabarito OMR</title>
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
-                body { font-family: 'Segoe UI', Arial, sans-serif; padding:20px; }
+                body { font-family: 'Segoe UI', Arial, sans-serif; padding:20px; background:white; }
                 .omr-card { background:white; padding:40px 30px; border:1px solid #000; max-width:900px; margin:0 auto; }
-                .circle-omr { display:inline-block; width:26px; height:26px; border-radius:50%; border:2px solid #000; }
+                .circle-omr { display:inline-block; width:26px; height:26px; border-radius:50%; border:2px solid #000; background:white; }
                 .questoes-table { width:100%; border-collapse:collapse; margin:20px 0; }
                 .questoes-table th, .questoes-table td { border:1px solid #000; padding:8px; text-align:center; position:relative; }
-                .vertex-tl, .vertex-tr, .vertex-br, .vertex-bl { position:absolute; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; border:2px solid white; color:white; }
-                .vertex-tl { top:-10px; left:-10px; background:#10b981; }
-                .vertex-tr { top:-10px; right:-10px; background:#3b82f6; }
-                .vertex-br { bottom:-10px; right:-10px; background:#ef4444; }
-                .vertex-bl { bottom:-10px; left:-10px; background:#f59e0b; }
+                h2 { text-align:center; }
+                .vertex-tl { position:absolute; top:-10px; left:-10px; background:#10b981; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; border:2px solid white; }
+                .vertex-tr { position:absolute; top:-10px; right:-10px; background:#3b82f6; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; border:2px solid white; }
+                .vertex-br { position:absolute; bottom:-10px; right:-10px; background:#ef4444; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; border:2px solid white; }
+                .vertex-bl { position:absolute; bottom:-10px; left:-10px; background:#f59e0b; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; border:2px solid white; }
+                @media print { body { padding:0; } .vertex-tl, .vertex-tr, .vertex-br, .vertex-bl { print-color-adjust: exact; } }
             </style></head><body>${conteudo}<script>window.onload=function(){window.print();setTimeout(function(){window.close();},500);};<\/script></body></html>`);
         win.document.close();
     }
@@ -585,8 +613,8 @@
     function atualizarStatusGabarito() {
         const gabarito = obterGabaritoDaTela();
         const faltam = numQuestoes - Object.keys(gabarito).length;
-        if (faltam === 0) gabaritoStatus.innerHTML = '<span style="color:#10b981;">✓ Completo</span>';
-        else gabaritoStatus.innerHTML = `<span style="color:#eab308;">⚠️ ${faltam} faltando</span>`;
+        if (faltam === 0) gabaritoStatus.innerHTML = '<span style="color:#10b981;">✓ Todas preenchidas</span>';
+        else gabaritoStatus.innerHTML = `<span style="color:#eab308;">⚠️ ${faltam} questão(ões) sem gabarito</span>`;
     }
     
     function obterGabaritoDaTela() {
@@ -606,12 +634,13 @@
         const selects = document.querySelectorAll('#gabaritoDinamico select');
         selects.forEach((select) => { const optionA = select.querySelector('option[value="A"]'); if (optionA) select.value = 'A'; });
         atualizarStatusGabarito();
+        logArea.innerHTML += "\n📋 Gabarito preenchido com todas 'A'";
     }
     
     resetGabaritoBtn.addEventListener('click', preencherTodasA);
-    validarGabaritoBtn.addEventListener('click', () => { const g = obterGabaritoDaTela(); alert(`${Object.keys(g).length}/${numQuestoes} preenchidas`); });
+    validarGabaritoBtn.addEventListener('click', () => { const g = obterGabaritoDaTela(); alert(`Gabarito: ${Object.keys(g).length}/${numQuestoes} questões preenchidas`); });
     
-    // ==================== CORREÇÃO ULTRA RÁPIDA ====================
+    // ==================== CORREÇÃO ULTRA RÁPIDA (CORRIGIDA) ====================
     async function executarCorrecao() {
         if (!currentImageData) { alert("Nenhuma imagem."); return; }
         if (!pontosDefinidos.every(v => v === true)) { alert("Defina os 4 vértices!"); return; }
@@ -675,6 +704,7 @@
             
             let respostasAluno = {};
             let posicoes = {};
+            let statusQuestao = {};
             
             for (let r = 0; r < rows; r++) {
                 let contagens = [];
@@ -719,53 +749,94 @@
                     }
                 }
                 
+                statusQuestao[r+1] = 'nao_detectado';
+                
                 if (melhorFill >= 0.05) {
                     if (segundaMelhor >= 0.05 && (segundaMelhor / melhorFill) > 0.65) {
-                        logArea.innerHTML += `\n⚠️ Q${r+1}: Dupla (${letras[melhorAlt]})`;
+                        statusQuestao[r+1] = 'marcacao_dupla';
+                        logArea.innerHTML += `\n⚠️ Q${r+1}: Marcação dupla (${letras[melhorAlt]}) - ANULADA`;
                     } else {
                         let letra = letras[melhorAlt];
                         respostasAluno[r+1] = letra;
+                        statusQuestao[r+1] = 'marcado';
                         let found = centroids.find(c => c.c === melhorAlt);
                         if (found) {
-                            posicoes[r+1] = { x: found.cx, y: found.cy };
+                            posicoes[r+1] = { x: found.cx, y: found.cy, letra: letra };
                         } else {
-                            posicoes[r+1] = { x: (melhorAlt * cellWidth) + (cellWidth/2), y: (r * cellHeight) + (cellHeight/2) };
+                            posicoes[r+1] = { x: (melhorAlt * cellWidth) + (cellWidth/2), y: (r * cellHeight) + (cellHeight/2), letra: letra };
                         }
-                        logArea.innerHTML += `\n✓ Q${r+1}: ${letra} (${Math.round(melhorFill*100)}%)`;
+                        logArea.innerHTML += `\n✓ Q${r+1}: Detectado ${letra} (${Math.round(melhorFill*100)}% preenchido)`;
                     }
                 } else {
-                    logArea.innerHTML += `\n⚠️ Q${r+1}: Não detectado`;
+                    logArea.innerHTML += `\n⚠️ Q${r+1}: Nenhuma marcação detectada`;
                 }
             }
             
-            let acertos = 0, erros = 0, naoDetectados = 0;
+            // CONTAGEM PRECISA DE ACERTOS
+            let acertos = 0, erros = 0, duplas = 0, naoDetectados = 0;
             let marcacoes = [];
             
             for (let i = 1; i <= numQuestoes; i++) {
                 let resultado = 'nao_detectado';
                 let marcado = '?';
                 
-                if (respostasAluno[i]) {
+                if (statusQuestao[i] === 'marcado' && respostasAluno[i]) {
                     marcado = respostasAluno[i];
-                    if (gabarito[i] && gabarito[i] === respostasAluno[i]) {
-                        resultado = 'acertou';
-                        acertos++;
+                    if (gabarito[i] && gabarito[i] !== "") {
+                        if (gabarito[i] === respostasAluno[i]) {
+                            resultado = 'acertou';
+                            acertos++;
+                            logArea.innerHTML += `\n✅ Q${i}: ACERTOU (${respostasAluno[i]} = ${gabarito[i]})`;
+                        } else {
+                            resultado = 'errou';
+                            erros++;
+                            logArea.innerHTML += `\n❌ Q${i}: ERROU (${respostasAluno[i]} ≠ ${gabarito[i]})`;
+                        }
                     } else {
                         resultado = 'errou';
                         erros++;
+                        logArea.innerHTML += `\n❌ Q${i}: Sem gabarito - considerado erro`;
                     }
+                } else if (statusQuestao[i] === 'marcacao_dupla') {
+                    resultado = 'marcacao_dupla';
+                    marcado = '⚠️ DUPLA';
+                    duplas++;
+                    logArea.innerHTML += `\n⚠️ Q${i}: Marcação dupla (ANULADA)`;
                 } else {
+                    resultado = 'nao_detectado';
+                    marcado = '?';
                     naoDetectados++;
+                    logArea.innerHTML += `\n⚪ Q${i}: Não detectado`;
                 }
                 
                 if (posicoes[i]) {
-                    marcacoes.push({ x: posicoes[i].x, y: posicoes[i].y, marcado, resultado });
+                    marcacoes.push({ 
+                        x: posicoes[i].x, 
+                        y: posicoes[i].y, 
+                        marcado: marcado, 
+                        resultado: resultado,
+                        confianca: posicoes[i].confianca
+                    });
                 } else {
-                    marcacoes.push({ x: DW/2, y: ((i-1)*cellHeight)+(cellHeight/2), marcado, resultado });
+                    marcacoes.push({ 
+                        x: DW/2, 
+                        y: ((i-1)*cellHeight)+(cellHeight/2), 
+                        marcado: marcado, 
+                        resultado: resultado 
+                    });
                 }
             }
             
-            ultimosResultados = { marcacoes, acertos, erros, duplas: 0, naoDetectados };
+            // Log resumido para debug
+            logArea.innerHTML += `\n\n📊 RESUMO DA CORREÇÃO:`;
+            logArea.innerHTML += `\n✅ Acertos: ${acertos}`;
+            logArea.innerHTML += `\n❌ Erros: ${erros}`;
+            logArea.innerHTML += `\n⚠️ Duplas/Anuladas: ${duplas}`;
+            logArea.innerHTML += `\n⚪ Não detectadas: ${naoDetectados}`;
+            logArea.innerHTML += `\n📝 Total questões: ${numQuestoes}`;
+            logArea.innerHTML += `\n🔢 Soma (A+E+D+N): ${acertos + erros + duplas + naoDetectados}`;
+            
+            ultimosResultados = { marcacoes, acertos, erros, duplas, naoDetectados };
             
             let canvasWarp = document.createElement('canvas');
             canvasWarp.width = warped.cols;
@@ -779,25 +850,28 @@
             
             scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
             gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>
-                                     ✅ ${acertos} acertos<br>
-                                     ❌ ${erros} erros<br>
-                                     ⚪ ${naoDetectados} não detectados`;
+                                     ✅ ${acertos} acerto${acertos !== 1 ? 's' : ''}<br>
+                                     ❌ ${erros} erro${erros !== 1 ? 's' : ''}<br>
+                                     ⚠️ ${duplas} marcação(ões) dupla(as) (ANULADAS)<br>
+                                     ⚪ ${naoDetectados} não detectado(s)`;
             
             statsArea.innerHTML = `
                 <div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${erros}</div><div class="stat-label">Erros</div></div>
+                <div class="stat-item"><div class="stat-value" style="color:#8b5cf6;">${duplas}</div><div class="stat-label">Duplas/Anuladas</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#eab308;">${naoDetectados}</div><div class="stat-label">Ñ Detectados</div></div>
-                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota</div></div>
+                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota (0-10)</div></div>
             `;
             
             resultArea.style.display = 'block';
             
             const endTime = performance.now();
             const elapsedTime = ((endTime - startTime) / 1000).toFixed(2);
-            logArea.innerHTML += `\n\n⏱️ Tempo: ${elapsedTime} segundos | ✅ ${acertos} acertos | 🎓 Nota: ${nota}`;
+            logArea.innerHTML += `\n\n⏱️ Tempo de processamento: ${elapsedTime} segundos`;
             
-            // Limpeza
-            src.delete(); srcTri.delete(); dstTri.delete(); M.delete(); warped.delete(); gray.delete(); binary.delete();
+            // Limpeza de memória
+            src.delete(); srcTri.delete(); dstTri.delete(); 
+            M.delete(); warped.delete(); gray.delete(); binary.delete();
             
         } catch(err) {
             logArea.innerHTML += `\n❌ Erro: ${err.message}`;
