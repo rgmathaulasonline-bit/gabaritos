@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Leitor de Gabarito OMR - RG Math (Ultra Rápido)</title>
+    <title>Leitor de Gabarito RG Math</title>
     <style>
         * { box-sizing: border-box; font-family: system-ui, 'Segoe UI', sans-serif; }
         body { background: #eef2f5; margin: 0; padding: 20px; }
@@ -76,7 +76,11 @@
         .vertex-br { position: absolute; bottom: -10px; right: -10px; background: #ef4444; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid white; z-index: 10; }
         .vertex-bl { position: absolute; bottom: -10px; left: -10px; background: #f59e0b; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid white; z-index: 10; }
         
-        .dicas-box { background: #fef9c3; border-left: 4px solid #eab308; padding: 12px 15px; border-radius: 16px; margin-top: 15px; font-size: 0.75rem; }
+        .instrucoes-iniciais { background: #dbeafe; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 16px; margin-bottom: 20px; font-size: 0.85rem; }
+        .instrucoes-iniciais h4 { margin: 0 0 8px 0; color: #1e40af; }
+        .instrucoes-iniciais ol { margin: 5px 0 5px 20px; padding: 0; }
+        .instrucoes-iniciais li { margin: 5px 0; }
+        
         .cartao-preview { display: none; }
         
         .legenda { display: flex; gap: 20px; justify-content: center; margin-top: 10px; padding: 8px; background: #f1f5f9; border-radius: 40px; font-size: 12px; flex-wrap: wrap; }
@@ -130,7 +134,7 @@
 <div class="loading" id="loadingIndicator">
     <div class="loading-spinner"></div>
     <div>🔍 Processando...</div>
-    <div style="font-size: 12px; margin-top: 5px;">Aguarde, isso leva apenas 1-2 segundos</div>
+    <div style="font-size: 12px; margin-top: 5px;">Aguarde um momento</div>
 </div>
 
 <div class="rg-header-container no-print">
@@ -147,7 +151,20 @@
         <a href="https://sites.google.com/view/rgmathprofrayltonguedes/home" target="_blank" class="btn-home">🏠 HOME</a>
     </div>
     
-    <h1>📋 Leitor de Gabarito OMR - Ultra Rápido</h1>
+    <h1>📋 Leitor de Gabarito RG Math</h1>
+    
+    <div class="instrucoes-iniciais no-print">
+        <h4>📌 Como usar:</h4>
+        <ol>
+            <li>Defina o <strong>Título da Prova</strong>, <strong>número de questões</strong> e <strong>alternativas</strong></li>
+            <li>Clique em <strong>"APLICAR E GERAR CARTÃO"</strong> e depois <strong>"GERAR PDF"</strong> para imprimir os gabaritos</li>
+            <li>No campo <strong>"Gabarito Oficial"</strong>, selecione as respostas corretas e clique em <strong>"VALIDAR PREENCHIMENTO"</strong></li>
+            <li>Tire uma foto do cartão preenchido ou envie uma imagem</li>
+            <li><strong>Clique nos 4 números (vértices)</strong> na imagem para alinhar a leitura</li>
+            <li>Clique em <strong>"CORRIGIR PROVA"</strong> para ver o resultado</li>
+            <li>Use <strong>"NOVA PROVA"</strong> para corrigir outro gabarito (o gabarito oficial é mantido)</li>
+        </ol>
+    </div>
     
     <div class="config-panel no-print">
         <div class="config-item">
@@ -176,7 +193,7 @@
     <div class="two-columns no-print">
         <div class="column column-left-order">
             <div class="card instrucoes-area">
-                <div class="section-title">🎯 Clique nos 4 NÚMEROS (vértices):</div>
+                <div class="section-title">🎯 Clique nos 4 números (vértices) na imagem:</div>
                 <div class="point-selector">
                     <button id="point1Btn" class="point-btn">① Vértice 1 (Sup Esq)</button>
                     <button id="point2Btn" class="point-btn">② Vértice 2 (Sup Dir)</button>
@@ -187,16 +204,12 @@
                     <button id="resetPointsBtn" class="point-btn btn-red">🔄 Resetar Pontos</button>
                 </div>
                 <div class="dicas-box">
-                    ⚡ <strong>VERSÃO ULTRA RÁPIDA E CORRIGIDA:</strong><br>
-                    • Processamento em ~1-2 segundos<br>
-                    • Contagem de acertos precisa e confiável<br>
-                    • Sinalização visual verde para acertos e vermelho para erros<br>
-                    • Detecção precisa com threshold adaptativo
+                    💡 <strong>Dica:</strong> Após tirar a foto, clique nos números 1, 2, 3 e 4 na imagem para alinhar a leitura.
                 </div>
             </div>
             
             <div class="card camera-area">
-                <div class="section-title">📸 Capturar cartão</div>
+                <div class="section-title">📸 Capturar cartão preenchido</div>
                 <video id="video" autoplay playsinline style="width:100%; border-radius: 20px;"></video>
                 <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
                     <button id="captureBtn">📷 Tirar Foto</button>
@@ -216,7 +229,7 @@
             <div class="card resultado-imagem-area">
                 <div class="section-title">🖼️ Resultado da Correção</div>
                 <canvas id="resultCanvas" style="width:100%; border-radius: 20px;"></canvas>
-                <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem; margin-top: 15px;">⚡ CORRIGIR PROVA</button>
+                <button id="corrigirBtn" class="btn-green" style="width:100%; font-size:1.2rem; margin-top: 15px;">✨ CORRIGIR PROVA</button>
             </div>
         </div>
         
@@ -308,7 +321,7 @@
     function esperarOpenCV() {
         if (typeof cv !== 'undefined' && cv.Mat && cv.imread) {
             cvReady = true;
-            logArea.innerHTML = "✅ OpenCV.js carregado! Modo Ultra Rápido ativado.";
+            logArea.innerHTML = "✅ OpenCV.js carregado! Sistema pronto para uso.";
         } else {
             logArea.innerHTML = "⏳ Carregando OpenCV...";
             setTimeout(esperarOpenCV, 500);
@@ -425,12 +438,6 @@
                     ctx.fillStyle = cor;
                     ctx.font = 'bold 14px Arial';
                     ctx.fillText(marc.marcado, marc.x-5, marc.y+5);
-                    
-                    if (marc.confianca) {
-                        ctx.font = '10px Arial';
-                        ctx.fillStyle = '#666';
-                        ctx.fillText(`${Math.round(marc.confianca*100)}%`, marc.x-10, marc.y-10);
-                    }
                 }
             }
         };
@@ -493,7 +500,7 @@
     function processarImagem(imageData) { 
         currentImageData = imageData; 
         resetarPontos(); 
-        logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 NÚMEROS (vértices) na imagem."; 
+        logArea.innerHTML += "\n📸 Imagem carregada. Clique nos 4 números (vértices) na imagem."; 
     }
     
     function carregarUpload(file) { 
@@ -566,7 +573,7 @@
         const titulo = tituloProvaInput.value.trim() || "Gabarito";
         if (!conteudo || conteudo.trim() === "") { alert("Erro: Nenhum conteúdo!"); return; }
         const win = window.open('', '_blank');
-        win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo} - Gabarito OMR</title>
+        win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titulo} - Gabarito</title>
             <style>
                 * { margin:0; padding:0; box-sizing:border-box; }
                 body { font-family: 'Segoe UI', Arial, sans-serif; padding:20px; background:white; }
@@ -640,7 +647,7 @@
     resetGabaritoBtn.addEventListener('click', preencherTodasA);
     validarGabaritoBtn.addEventListener('click', () => { const g = obterGabaritoDaTela(); alert(`Gabarito: ${Object.keys(g).length}/${numQuestoes} questões preenchidas`); });
     
-    // ==================== CORREÇÃO ULTRA RÁPIDA (CORRIGIDA) ====================
+    // ==================== CORREÇÃO ====================
     async function executarCorrecao() {
         if (!currentImageData) { alert("Nenhuma imagem."); return; }
         if (!pontosDefinidos.every(v => v === true)) { alert("Defina os 4 vértices!"); return; }
@@ -649,7 +656,7 @@
         if (!cvReady) { alert("Aguarde OpenCV."); return; }
         
         mostrarLoading();
-        logArea.innerHTML += "\n⚡ Corrigindo (modo ultra rápido)...";
+        logArea.innerHTML += "\n🔍 Corrigindo prova...";
         const startTime = performance.now();
         
         try {
@@ -659,7 +666,6 @@
             
             let src = cv.imread(img);
             
-            // Reduz drasticamente o tamanho para acelerar
             let scale = 1;
             let maxDim = 1000;
             if (src.cols > maxDim || src.rows > maxDim) {
@@ -674,7 +680,6 @@
             
             let ptsAbs = pontos.map(p => ({ x: p.x * src.cols, y: p.y * src.rows }));
             
-            // Dimensões warp reduzidas
             const DW = 800, DH = 1000;
             
             let srcTri = cv.matFromArray(4, 1, cv.CV_32FC2, [
@@ -686,11 +691,9 @@
             let warped = new cv.Mat();
             cv.warpPerspective(src, warped, M, new cv.Size(DW, DH));
             
-            // Processamento simplificado e rápido
             let gray = new cv.Mat();
             cv.cvtColor(warped, gray, cv.COLOR_RGBA2GRAY);
             
-            // Binarização simples e rápida
             let binary = new cv.Mat();
             cv.threshold(gray, binary, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU);
             
@@ -754,7 +757,7 @@
                 if (melhorFill >= 0.05) {
                     if (segundaMelhor >= 0.05 && (segundaMelhor / melhorFill) > 0.65) {
                         statusQuestao[r+1] = 'marcacao_dupla';
-                        logArea.innerHTML += `\n⚠️ Q${r+1}: Marcação dupla (${letras[melhorAlt]}) - ANULADA`;
+                        logArea.innerHTML += `\n⚠️ Q${r+1}: Marcação dupla - ANULADA`;
                     } else {
                         let letra = letras[melhorAlt];
                         respostasAluno[r+1] = letra;
@@ -765,14 +768,13 @@
                         } else {
                             posicoes[r+1] = { x: (melhorAlt * cellWidth) + (cellWidth/2), y: (r * cellHeight) + (cellHeight/2), letra: letra };
                         }
-                        logArea.innerHTML += `\n✓ Q${r+1}: Detectado ${letra} (${Math.round(melhorFill*100)}% preenchido)`;
+                        logArea.innerHTML += `\n✓ Q${r+1}: Detectado ${letra} (${Math.round(melhorFill*100)}%)`;
                     }
                 } else {
-                    logArea.innerHTML += `\n⚠️ Q${r+1}: Nenhuma marcação detectada`;
+                    logArea.innerHTML += `\n⚠️ Q${r+1}: Não detectado`;
                 }
             }
             
-            // CONTAGEM PRECISA DE ACERTOS
             let acertos = 0, erros = 0, duplas = 0, naoDetectados = 0;
             let marcacoes = [];
             
@@ -814,8 +816,7 @@
                         x: posicoes[i].x, 
                         y: posicoes[i].y, 
                         marcado: marcado, 
-                        resultado: resultado,
-                        confianca: posicoes[i].confianca
+                        resultado: resultado
                     });
                 } else {
                     marcacoes.push({ 
@@ -827,14 +828,11 @@
                 }
             }
             
-            // Log resumido para debug
-            logArea.innerHTML += `\n\n📊 RESUMO DA CORREÇÃO:`;
+            logArea.innerHTML += `\n\n📊 RESUMO:`;
             logArea.innerHTML += `\n✅ Acertos: ${acertos}`;
             logArea.innerHTML += `\n❌ Erros: ${erros}`;
-            logArea.innerHTML += `\n⚠️ Duplas/Anuladas: ${duplas}`;
+            logArea.innerHTML += `\n⚠️ Duplas: ${duplas}`;
             logArea.innerHTML += `\n⚪ Não detectadas: ${naoDetectados}`;
-            logArea.innerHTML += `\n📝 Total questões: ${numQuestoes}`;
-            logArea.innerHTML += `\n🔢 Soma (A+E+D+N): ${acertos + erros + duplas + naoDetectados}`;
             
             ultimosResultados = { marcacoes, acertos, erros, duplas, naoDetectados };
             
@@ -852,24 +850,23 @@
             gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>
                                      ✅ ${acertos} acerto${acertos !== 1 ? 's' : ''}<br>
                                      ❌ ${erros} erro${erros !== 1 ? 's' : ''}<br>
-                                     ⚠️ ${duplas} marcação(ões) dupla(as) (ANULADAS)<br>
+                                     ⚠️ ${duplas} marcação(ões) dupla(as)<br>
                                      ⚪ ${naoDetectados} não detectado(s)`;
             
             statsArea.innerHTML = `
                 <div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${erros}</div><div class="stat-label">Erros</div></div>
-                <div class="stat-item"><div class="stat-value" style="color:#8b5cf6;">${duplas}</div><div class="stat-label">Duplas/Anuladas</div></div>
+                <div class="stat-item"><div class="stat-value" style="color:#8b5cf6;">${duplas}</div><div class="stat-label">Duplas</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#eab308;">${naoDetectados}</div><div class="stat-label">Ñ Detectados</div></div>
-                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota (0-10)</div></div>
+                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota</div></div>
             `;
             
             resultArea.style.display = 'block';
             
             const endTime = performance.now();
             const elapsedTime = ((endTime - startTime) / 1000).toFixed(2);
-            logArea.innerHTML += `\n\n⏱️ Tempo de processamento: ${elapsedTime} segundos`;
+            logArea.innerHTML += `\n\n⏱️ Tempo: ${elapsedTime} segundos`;
             
-            // Limpeza de memória
             src.delete(); srcTri.delete(); dstTri.delete(); 
             M.delete(); warped.delete(); gray.delete(); binary.delete();
             
