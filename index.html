@@ -91,31 +91,81 @@
         .legenda-cor.amarelo { background: #eab308; }
         .legenda-cor.roxo { background: #8b5cf6; }
 
+        /* NOVO CABEÇALHO - Estilos exatos da referência */
         .rg-header-container {
-            text-align: center; padding: 1.5rem 1rem;
+            text-align: center;
+            padding: 1.5rem 1rem;
             background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
-            color: #fff; border-radius: 16px; margin-bottom: 1.5rem;
+            color: #fff;
+            border-radius: 16px;
+            margin-bottom: 1.5rem;
             box-shadow: 0 8px 24px rgba(26, 35, 126, 0.2);
         }
-        .rg-logo img { width: 80px; height: 80px; border-radius: 50%; border: 4px solid #fff; object-fit: cover; margin: 0 auto; }
-        .rg-header-container h1 { color: #fff; font-size: 1.6rem; margin: 0.75rem 0; }
+        .rg-header-content {
+            /* container para alinhar conteúdo */
+        }
+        .rg-logo {
+            display: flex;
+            justify-content: center;
+        }
+        .rg-logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            object-fit: cover;
+            margin: 0 auto;
+            transition: all 0.2s ease;
+        }
+        .rg-header-container h1 {
+            color: #fff;
+            font-size: 1.6rem;
+            margin: 0.75rem 0;
+        }
 
+        /* NOVO RODAPÉ - Estilos exatos da referência */
         .rg-footer-container {
-            text-align: center; padding: 2rem 1rem;
+            text-align: center;
+            padding: 2rem 1rem;
             background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
-            color: #fff; border-radius: 16px; margin-top: 1.5rem;
+            color: #fff;
+            border-radius: 16px;
+            margin-top: 1.5rem;
         }
         .rg-instagram-btn {
             background: linear-gradient(135deg, #405de6 0%, #833ab4 100%);
-            color: #fff; border: none; padding: 0.9rem 1.5rem;
-            border-radius: 30px; cursor: pointer; margin-top: 1.25rem;
-            display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-            width: 100%; max-width: 400px; font-weight: 600;
+            color: #fff;
+            border: none;
+            padding: 0.9rem 1.5rem;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 1.25rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            max-width: 400px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+        }
+        .rg-instagram-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
         
+        /* MEDIA QUERIES RESPONSIVAS para cabeçalho e rodapé */
         @media (min-width: 768px) {
             .rg-header-container h1 { font-size: 2.2rem; }
             .rg-logo img { width: 100px; height: 100px; }
+        }
+        
+        @media (max-width: 600px) {
+            .rg-logo img { width: 65px; height: 65px; }
+            .rg-header-container { padding: 1rem; }
+            .rg-footer-container { padding: 1.2rem; }
+            .rg-instagram-btn { padding: 0.7rem 1rem; font-size: 0.9rem; max-width: 90%; }
         }
         
         @media print { .no-print { display: none !important; } }
@@ -137,6 +187,7 @@
     <div style="font-size: 12px; margin-top: 5px;">Aguarde um momento</div>
 </div>
 
+<!-- ========== NOVO CABEÇALHO SUBSTITUÍDO ========== -->
 <div class="rg-header-container no-print">
     <div class="rg-header-content">
         <div class="rg-logo">
@@ -255,10 +306,11 @@
     <div class="log no-print" id="logArea">⏳ Aguardando OpenCV.js...</div>
 </div>
 
+<!-- ========== NOVO RODAPÉ SUBSTITUÍDO ========== -->
 <div class="rg-footer-container no-print">
     <p>© 2025 RG Math - Professor Raylton Guedes</p>
     <a href="https://www.instagram.com/rgmath_education/" target="_blank" style="text-decoration: none;">
-        <button class="rg-instagram-btn">📷 @rgmath_education</button>
+        <button class="rg-instagram-btn">📷 Acompanhe o RG Math no Instagram @rgmath_education</button>
     </a>
 </div>
 
@@ -537,7 +589,7 @@
             <div style="background:#fef3c7; padding:8px; border-radius:40px; text-align:center; margin:15px 0;">📌 PREENCHA COMPLETAMENTE O CÍRCULO com caneta AZUL ou PRETA</div>
             <table class="questoes-table"><thead><tr><th>Questão</th>`;
         for (let l of letrasUsadas) html += `<th>${l}</th>`;
-        html += `</tr></thead><tbody>`;
+        html += `</thead><tbody>`;
         
         for (let i = 1; i <= qtd; i++) {
             html += `<tr><td style="font-weight:bold;">${i}</td>`;
