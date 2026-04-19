@@ -176,6 +176,34 @@
         .loading { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 1000; display: none; text-align: center; }
         .loading-spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 10px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* novo estilo comunicado câmera estratégico */
+        .camera-info-banner {
+            background: #e0f2fe;
+            border-left: 5px solid #0284c7;
+            border-radius: 18px;
+            padding: 12px 16px;
+            margin: 15px 0 12px 0;
+            font-size: 0.85rem;
+            color: #0c4a6e;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .camera-info-banner strong {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        .camera-info-banner p {
+            margin: 4px 0;
+        }
+        .camera-info-banner .highlight {
+            background: #0284c720;
+            border-radius: 30px;
+            padding: 2px 8px;
+            font-weight: 600;
+        }
     </style>
     <script async src="https://cdn.jsdelivr.net/npm/opencv.js" onerror="console.error('Falha OpenCV');"></script>
 </head>
@@ -199,7 +227,8 @@
 
 <div class="container">
     <div class="home-button-container no-print">
-        <a href="https://sites.google.com/view/rgmathprofrayltonguedes/home" target="_blank" class="btn-home">🏠 HOME</a>
+        <!-- Botão HOME com ação de desligar câmera conforme solicitado -->
+        <a href="https://sites.google.com/view/rgmathprofrayltonguedes/home" target="_blank" class="btn-home" id="homeButtonWithCameraOff">🏠 HOME</a>
     </div>
     
     <h1>📋 Leitor de Gabarito RG Math</h1>
@@ -262,6 +291,14 @@
             <div class="card camera-area">
                 <div class="section-title">📸 Capturar cartão preenchido</div>
                 <video id="video" autoplay playsinline style="width:100%; border-radius: 20px;"></video>
+                
+                <!-- 📢 COMUNICADO ESTRATÉGICO SOBRE CÂMERA E BOTÃO HOME (AJUSTADO CONFORME SOLICITADO) -->
+                <div class="camera-info-banner">
+                    <strong>📷 Informações sobre a câmera</strong>
+                    <p>✅ <span class="highlight">Ao iniciar a página, a câmera é ativada automaticamente</span> para capturar o cartão preenchido. No primeiro acesso, o navegador solicitará permissão para uso da câmera.</p>
+                    <p>🏠 <span class="highlight">Quando for clicar no botão HOME (acima), antes aperte o botão "Desligar Câmera".</span></p>
+                </div>
+                
                 <div style="margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px;">
                     <button id="captureBtn">📷 Tirar Foto</button>
                     <button id="toggleCameraBtn" class="btn-warning">🔴 Desligar Câmera</button>
@@ -418,7 +455,7 @@
     
     function capturarFoto() {
         if (!cameraActive || !stream || !video.videoWidth) {
-            alert("Câmera não está ativa!");
+            alert("Câmera não está ativa! Clique em 'Ligar Câmera' primeiro.");
             return;
         }
         canvas.width = video.videoWidth;
@@ -699,7 +736,6 @@
     resetGabaritoBtn.addEventListener('click', preencherTodasA);
     validarGabaritoBtn.addEventListener('click', () => { const g = obterGabaritoDaTela(); alert(`Gabarito: ${Object.keys(g).length}/${numQuestoes} questões preenchidas`); });
     
-    // ==================== CORREÇÃO ====================
     async function executarCorrecao() {
         if (!currentImageData) { alert("Nenhuma imagem."); return; }
         if (!pontosDefinidos.every(v => v === true)) { alert("Defina os 4 vértices!"); return; }
@@ -840,51 +876,30 @@
                         if (gabarito[i] === respostasAluno[i]) {
                             resultado = 'acertou';
                             acertos++;
-                            logArea.innerHTML += `\n✅ Q${i}: ACERTOU (${respostasAluno[i]} = ${gabarito[i]})`;
                         } else {
                             resultado = 'errou';
                             erros++;
-                            logArea.innerHTML += `\n❌ Q${i}: ERROU (${respostasAluno[i]} ≠ ${gabarito[i]})`;
                         }
                     } else {
                         resultado = 'errou';
                         erros++;
-                        logArea.innerHTML += `\n❌ Q${i}: Sem gabarito - considerado erro`;
                     }
                 } else if (statusQuestao[i] === 'marcacao_dupla') {
                     resultado = 'marcacao_dupla';
                     marcado = '⚠️ DUPLA';
                     duplas++;
-                    logArea.innerHTML += `\n⚠️ Q${i}: Marcação dupla (ANULADA)`;
                 } else {
                     resultado = 'nao_detectado';
                     marcado = '?';
                     naoDetectados++;
-                    logArea.innerHTML += `\n⚪ Q${i}: Não detectado`;
                 }
                 
                 if (posicoes[i]) {
-                    marcacoes.push({ 
-                        x: posicoes[i].x, 
-                        y: posicoes[i].y, 
-                        marcado: marcado, 
-                        resultado: resultado
-                    });
+                    marcacoes.push({ x: posicoes[i].x, y: posicoes[i].y, marcado: marcado, resultado: resultado });
                 } else {
-                    marcacoes.push({ 
-                        x: DW/2, 
-                        y: ((i-1)*cellHeight)+(cellHeight/2), 
-                        marcado: marcado, 
-                        resultado: resultado 
-                    });
+                    marcacoes.push({ x: DW/2, y: ((i-1)*cellHeight)+(cellHeight/2), marcado: marcado, resultado: resultado });
                 }
             }
-            
-            logArea.innerHTML += `\n\n📊 RESUMO:`;
-            logArea.innerHTML += `\n✅ Acertos: ${acertos}`;
-            logArea.innerHTML += `\n❌ Erros: ${erros}`;
-            logArea.innerHTML += `\n⚠️ Duplas: ${duplas}`;
-            logArea.innerHTML += `\n⚪ Não detectadas: ${naoDetectados}`;
             
             ultimosResultados = { marcacoes, acertos, erros, duplas, naoDetectados };
             
@@ -897,31 +912,16 @@
             
             let percentual = (acertos / numQuestoes) * 100;
             let nota = (acertos/numQuestoes*10).toFixed(1);
-            
             scoreDisplay.innerText = `${acertos}/${numQuestoes}`;
-            gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>
-                                     ✅ ${acertos} acerto${acertos !== 1 ? 's' : ''}<br>
-                                     ❌ ${erros} erro${erros !== 1 ? 's' : ''}<br>
-                                     ⚠️ ${duplas} marcação(ões) dupla(as)<br>
-                                     ⚪ ${naoDetectados} não detectado(s)`;
-            
-            statsArea.innerHTML = `
-                <div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
+            gradeDetail.innerHTML = `🎓 NOTA: ${nota} (${percentual.toFixed(1)}%)<br>✅ ${acertos} acerto${acertos !== 1 ? 's' : ''}<br>❌ ${erros} erro${erros !== 1 ? 's' : ''}<br>⚠️ ${duplas} marcação(ões) dupla(as)<br>⚪ ${naoDetectados} não detectado(s)`;
+            statsArea.innerHTML = `<div class="stat-item"><div class="stat-value" style="color:#10b981;">${acertos}</div><div class="stat-label">Acertos</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#ef4444;">${erros}</div><div class="stat-label">Erros</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#8b5cf6;">${duplas}</div><div class="stat-label">Duplas</div></div>
                 <div class="stat-item"><div class="stat-value" style="color:#eab308;">${naoDetectados}</div><div class="stat-label">Ñ Detectados</div></div>
-                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota</div></div>
-            `;
-            
+                <div class="stat-item"><div class="stat-value">${nota}</div><div class="stat-label">Nota</div></div>`;
             resultArea.style.display = 'block';
             
-            const endTime = performance.now();
-            const elapsedTime = ((endTime - startTime) / 1000).toFixed(2);
-            logArea.innerHTML += `\n\n⏱️ Tempo: ${elapsedTime} segundos`;
-            
-            src.delete(); srcTri.delete(); dstTri.delete(); 
-            M.delete(); warped.delete(); gray.delete(); binary.delete();
-            
+            src.delete(); srcTri.delete(); dstTri.delete(); M.delete(); warped.delete(); gray.delete(); binary.delete();
         } catch(err) {
             logArea.innerHTML += `\n❌ Erro: ${err.message}`;
             alert(`Erro: ${err.message}`);
@@ -930,6 +930,7 @@
         }
     }
     
+    // Eventos principais
     captureBtn.addEventListener('click', capturarFoto);
     toggleCameraBtn.addEventListener('click', toggleCamera);
     fileUpload.addEventListener('change', (e) => { if(e.target.files[0]) carregarUpload(e.target.files[0]); });
@@ -937,6 +938,15 @@
     btnAplicarConfig.addEventListener('click', atualizarCartaoVisual);
     btnGerarPDF.addEventListener('click', gerarPDF);
     novaProvaBtn.addEventListener('click', resetarCorrecao);
+    
+    // Garantir que ao clicar no botão HOME a câmera seja desligada (requisito)
+    const homeButton = document.getElementById('homeButtonWithCameraOff');
+    if (homeButton) {
+        homeButton.addEventListener('click', (e) => {
+            desligarCamera();
+            // Permite a navegação normal (href)
+        });
+    }
     
     iniciarCamera();
     atualizarCartaoVisual();
